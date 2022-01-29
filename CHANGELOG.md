@@ -11,19 +11,14 @@
 
 ## v0.1.2
 
-- Fix `get()`
+- Fix `get()`.
+- Fix type checking.
 
 ## v0.1.1
 
 - Fix `__setattr__()`.
 
-**Merged pull requests:**
-
-- #6
-
 ## v0.1.0
-
-**Implemented enhancements:**
 
 - Key-restriction can be switched.
 - Add initializing argument 'fixkey'.
