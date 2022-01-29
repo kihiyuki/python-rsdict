@@ -9,6 +9,11 @@
 **Merged pull requests:**
 -->
 
+## v0.1.3
+
+- Add Python3.5 support.
+- Make it possible to create new rsdict with rsdict.
+
 ## v0.1.2
 
 - Fix `get()`.

@@ -64,9 +64,12 @@ class rsdict(dict):
             rsdict({'name': 'John', 'enable': True, 'count': 0},
                 frozen=False, fixkey=True, fixtype=False, cast=False)
         """
-        if type(items) is not dict:
+        if not isinstance(items, dict):
             raise TypeError(
-                f"expected dict instance, {type(items).__name__} found")
+                "expected dict instance, {} found".format(
+                    type(items).__name__,
+                )
+            )
 
         super().__init__(items)
 
@@ -121,7 +124,11 @@ class rsdict(dict):
                     value = initialtype(value)
                 else:
                     raise TypeError(
-                        f"expected {initialtype.__name__} instance, {type(value).__name__} found")
+                        "expected {} instance, {} found".format(
+                            initialtype.__name__,
+                            type(value).__name__,
+                        )
+                    )
             # change value
             return super().__setitem__(key, value)
         else:
@@ -136,7 +143,12 @@ class rsdict(dict):
     def __getattribute__(self, name: str) -> Any:
         # disable some attributes (of built-in dictionary)
         if name in ["fromkeys"]:
-            raise AttributeError(f"{_ErrorMessages.noattrib} '{name}'")
+            raise AttributeError(
+                "{} '{}'".format(
+                    _ErrorMessages.noattrib,
+                    name,
+                )
+            )
         return super().__getattribute__(name)
 
     def __setattr__(self, name: str, value: Any) -> None:
@@ -147,7 +159,11 @@ class rsdict(dict):
             return super().__setattr__(name, value)
         else:
             raise AttributeError(
-                f"{_ErrorMessages.noattrib} '{name}'")
+                "{} '{}'".format(
+                    _ErrorMessages.noattrib,
+                    name,
+                )
+            )
 
     def __sizeof__(self) -> int:
         """Return size(current values) + size(initial values)"""
@@ -334,9 +350,14 @@ class rsdict(dict):
 
     def get_option(self, name):
         if name in ["items"]:
-            raise AttributeError(f"'{name}' is not option")
+            raise AttributeError("'{}' is not option".format(name))
         elif name not in self.__initval._fields:
-            raise AttributeError(f"{_ErrorMessages.noarg} '{name}'")
+            raise AttributeError(
+                "{} '{}'".format(
+                    _ErrorMessages.noarg,
+                    name,
+                )
+            )
         else:
             return self.__initval.__getattribute__(name)
 
