@@ -1,12 +1,35 @@
 # rsdict
 
-[![Python package](https://github.com/kihiyuki/python-rsdict/actions/workflows/python-package.yml/badge.svg)](https://github.com/kihiyuki/python-rsdict/actions/workflows/python-package.yml)
+[![Actions Badge - Python package](https://github.com/kihiyuki/python-rsdict/actions/workflows/python-package.yml/badge.svg)](https://github.com/kihiyuki/python-rsdict/actions/workflows/python-package.yml)
 
 <!-- ref: rsdict.__doc__ -->
 rsdict is a **restricted** and **resetable** dictionary,
 a subclass of Python `dict` (built-in dictionary).
 
-[README(日本語)](README_ja.md)
+```python
+>>> from rsdict import rsdict
+
+>>> d = {"foo": 0, "bar": "baz"}
+>>> rd = rsdict(d)
+>>> rd
+rsdict({'foo': 0, 'bar': 'baz'}, frozen=False, fixkey=True, fixtype=True, cast=False)
+
+>>> rd["foo"] = "str.value"
+TypeError
+>>> rd["newkey"] = 1
+AttributeError
+
+>>> rd["foo"] = 999
+>>> rd.reset()
+>>> rd == d
+True
+```
+
+## Installation
+
+```sh
+pip install rsdict
+```
 
 ## Features
 
@@ -14,7 +37,7 @@ a subclass of Python `dict` (built-in dictionary).
 - Key-restrict(able): If activated, cannot add or delete keys.
 - Resettable: to initial value(s).
 
-## Parameters
+### Parameters
 
 Initialize:
 `rsdict(items, frozen=False, fixkey=True, fixtype=True, cast=False)`
@@ -29,7 +52,7 @@ Initialize:
 - cast (bool, optional): If True, cast to initial type (if possible).
     If False, allow only the same type of initial value.
 
-## Additional methods
+### Additional methods
 
 - `set(key, value)`: Alias of `__setitem__`.
 - `to_dict() -> dict`: Convert to dict instance.
@@ -37,22 +60,20 @@ Initialize:
 - `is_changed() -> bool`: If True, the values are changed from initial.
 - `get_initial() -> dict`: Return initial values.
 
-## Disabled methods
+### Disabled methods
 
 <!-- ref: rsdict.__getattribute__ -->
 - `fromkeys()`
 
-## Notes
+### Notes
 
-- [Tested with Python 3.6, 3.7, 3.8, 3.9, 3.10.](.github/workflows/python-package.yml)
-- Expected type of values:
+- Expected types of value:
     `int`, `float`, `str`, `bool`, `None`,
     `list`, `dict`, `tuple`,
     `pathlib.Path`
-- Third-party object is not supported.
-- `numpy.ndarray` will be corrupted if cast=True.
+- Some types (e.g. `numpy.ndarray`) cannot be cast.
 
-## Example
+## Examples
 
 ### Initialize
 
@@ -60,7 +81,7 @@ Initialize:
 ```python
 >>> from rsdict import rsdict
 
->>> d = dict
+>>> d = dict(
 ...     name = "John",
 ...     enable = True,
 ...     count = 0,
@@ -82,6 +103,8 @@ True
 True
 >>> rd.get("xyz")
 None
+>>> rd["xyz"]
+KeyError
 ```
 
 ### Set
@@ -129,8 +152,6 @@ AttributeError
 
 ### Delete
 
-If frozen or fixkey, raise AttributeError.
-
 ```python
 # If frozen or fixkey, deleting key raises an exception.
 >>> del rd["count"]
@@ -151,13 +172,13 @@ dict_keys(['a', 'c'])
 # Check whether the values are changed from initial.
 >>> rd.is_changed()
 False
-# Change some values.
+# (Change some values.)
 >>> rd["enable"] = False
 >>> rd["count"] = 5
 >>> rd.is_changed()
 True
 
-# Reset by specifying key.
+# Reset with a key.
 >>> rd.reset("count")
 >>> rd["count"]
 0
@@ -212,14 +233,3 @@ rsdict({'key1': 10, 'key2': 20, 'key3': False}, frozen=False, fixkey=False, fixt
 >>> rd.get_initial()
 {'key1': 10, 'key2': 'abc', 'key3': False}
 ```
-
-## Installation
-
-```sh
-pip install git+https://github.com/kihiyuki/python-rsdict.git
-```
-
-<!--
-Develop branch:
-pip install git+https://github.com/kihiyuki/python-rsdict.git@develop
--->
