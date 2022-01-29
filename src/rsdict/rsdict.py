@@ -64,7 +64,7 @@ class rsdict(dict):
             rsdict({'name': 'John', 'enable': True, 'count': 0},
                 frozen=False, fixkey=True, fixtype=False, cast=False)
         """
-        if type(items) is not dict:
+        if not isinstance(items, dict):
             raise TypeError(
                 "expected dict instance, {} found".format(
                     type(items).__name__,

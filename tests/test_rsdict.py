@@ -66,6 +66,12 @@ class Testrsdict(object):
         for arg in kwargs.keys():
             assert data.get_option(arg) == kwargs[arg]
 
+        data = rsdict(inititems)
+        data2 = rsdict(data, **kwargs)
+        assert data == data2
+        for arg in kwargs.keys():
+            assert data2.get_option(arg) == kwargs[arg]
+
         # unsupported dict-style initialization
         with pytest.raises(TypeError):
             data = rsdict(a=1, b="xyz")
