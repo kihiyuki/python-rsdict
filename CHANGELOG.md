@@ -9,6 +9,10 @@
 **Merged pull requests:**
 -->
 
+## v0.1.3
+
+- Add Python3.5 support.
+
 ## v0.1.2
 
 - Fix `get()`.
