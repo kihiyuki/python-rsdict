@@ -76,18 +76,22 @@ class Testrsdict(object):
         """test attributes equivalent to (built-in) dict"""
         assert defaultdata == inititems
         assert defaultdata.keys() == inititems.keys()
-
-        for v, v_init in zip(defaultdata.values(), inititems.values()):
-            assert compare(v, v_init)
-        for kv, kv_init in zip(defaultdata.items(), inititems.items()):
-            k, v = kv
-            k_init, v_init = kv_init
-            assert compare(k, k_init)
-            assert compare(v, v_init)
-
-        assert list(defaultdata) == list(inititems)
         assert "int" in defaultdata
         assert "hoge" not in defaultdata
+
+        if sys.version_info >= (3, 7):
+            for v, v_init in zip(defaultdata.values(), inititems.values()):
+                assert compare(v, v_init)
+            for kv, kv_init in zip(defaultdata.items(), inititems.items()):
+                k, v = kv
+                k_init, v_init = kv_init
+                assert compare(k, k_init)
+                assert compare(v, v_init)
+            assert list(defaultdata) == list(inititems)
+        else:
+            for k in defaultdata.keys():
+                assert compare(defaultdata[k], inititems[k])
+            assert set(defaultdata) == set(inititems)
 
         if sys.version_info >= (3, 8):
             # reverse
@@ -156,7 +160,6 @@ class Testrsdict(object):
         ("float", "0.5", 0.5),
         ("list", list(), []),
         ("list", range(5), list(range(5))),
-        ("list", dict(a=1, b=2), ["a", "b"]),
         ("dict", dict(), dict()),
         ("dict", (("g", 3), ("h", 5)), {"g": 3, "h": 5}),
         ("tuple", (), ()),
@@ -363,8 +366,12 @@ class Testrsdict(object):
         else:
             del data["int"]
             assert data.pop("str") == inititems["str"]
-            k = list(data.keys())[-1]
-            assert data.popitem() == (k, inititems[k])
+            if sys.version_info >= (3, 7):
+                k = list(data.keys())[-1]
+                assert data.popitem() == (k, inititems[k])
+            else:
+                k, v = data.popitem()
+                assert k not in data
             data.clear()
             assert data.to_dict() == dict()
             assert data.get_initial() == dict()
@@ -401,7 +408,10 @@ class Testrsdict(object):
         data_eval = eval(data.__repr__())
         assert data_eval == data
         # str()
-        assert str(data) == str(inititems)
+        if sys.version_info >= (3, 7):
+            assert str(data) == str(inititems)
+        else:
+            eval(str(data)) == inititems
         # sizeof
         assert data.__sizeof__() > 0
 
