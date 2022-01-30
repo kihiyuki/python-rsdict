@@ -1,3 +1,3 @@
-from .rsdict import rsdict
+from .rsdict import rsdict, rsdict_frozen, rsdict_unfix, rsdict_fixtype, rsdict_fixkey
 
-__version__ = "0.1.3"
+__version__ = "0.1.4"

@@ -9,6 +9,10 @@
 **Merged pull requests:**
 -->
 
+## v0.1.4
+
+- Add subclasses `rsdict_frozen`, `rsdict_unfix`, `rsdict_fixkey`, `rsdict_fixtype`.
+
 ## v0.1.3
 
 - Add Python3.5 support.
