@@ -1,6 +1,8 @@
 # rsdict
 
 [![Actions Badge - Python package](https://github.com/kihiyuki/python-rsdict/actions/workflows/python-package.yml/badge.svg)](https://github.com/kihiyuki/python-rsdict/actions/workflows/python-package.yml)
+[![PyPI version](https://badge.fury.io/py/rsdict.svg)](https://badge.fury.io/py/rsdict)
+[![Downloads](https://static.pepy.tech/personalized-badge/rsdict?period=total&units=international_system&left_color=grey&right_color=blue&left_text=PyPI%20Downloads)](https://pepy.tech/project/rsdict)
 
 <!-- ref: rsdict.__doc__ -->
 rsdict is a **restricted** and **resetable** dictionary,
@@ -51,6 +53,22 @@ Initialize:
 - fixtype (bool, optional): if True, cannot change type of keys.
 - cast (bool, optional): If True, cast to initial type (if possible).
     If False, allow only the same type of initial value.
+
+### Subclasses
+
+```python
+# rsdict(frozen=True) as default
+from rsdict import rsdict_frozen as rsdict
+
+# rsdict(fixkey=False, fixtype=False) as default
+from rsdict import rsdict_unfix as rsdict
+
+# rsdict(fixkey=True, fixtype=False) as default
+from rsdict import rsdict_fixkey as rsdict
+
+# rsdict(fixkey=False, fixtype=True) as default
+from rsdict import rsdict_fixtype as rsdict
+```
 
 ### Additional methods
 

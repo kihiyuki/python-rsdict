@@ -368,3 +368,55 @@ class rsdict(dict):
             bool: If True, the values are changed from initial.
         """
         return self.to_dict() != self.get_initial()
+
+
+class rsdict_frozen(rsdict):
+    """rsdict(fozen=True)"""
+    def __init__(
+        self,
+        items: dict,
+        frozen: bool = True,
+        fixkey: bool = True,
+        fixtype: bool = True,
+        cast: bool = False
+    ) -> None:
+        return super().__init__(items, frozen, fixkey, fixtype, cast)
+
+
+class rsdict_unfix(rsdict):
+    """rsdict(fixkey=False, fixtype=False)"""
+    def __init__(
+        self,
+        items: dict,
+        frozen: bool = False,
+        fixkey: bool = False,
+        fixtype: bool = False,
+        cast: bool = False
+    ) -> None:
+        return super().__init__(items, frozen, fixkey, fixtype, cast)
+
+
+class rsdict_fixkey(rsdict):
+    """rsdict(fixkey=True, fixtype=False)"""
+    def __init__(
+        self,
+        items: dict,
+        frozen: bool = False,
+        fixkey: bool = True,
+        fixtype: bool = False,
+        cast: bool = False
+    ) -> None:
+        return super().__init__(items, frozen, fixkey, fixtype, cast)
+
+
+class rsdict_fixtype(rsdict):
+    """rsdict(fixkey=False, fixtype=True)"""
+    def __init__(
+        self,
+        items: dict,
+        frozen: bool = False,
+        fixkey: bool = False,
+        fixtype: bool = True,
+        cast: bool = False
+    ) -> None:
+        return super().__init__(items, frozen, fixkey, fixtype, cast)
