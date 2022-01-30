@@ -64,13 +64,13 @@ class TestRsdict(object):
         data = rsdict(inititems, **kwargs)
         assert data.to_dict() == inititems
         for arg in kwargs.keys():
-            assert data.get_option(arg) == kwargs[arg]
+            assert data._get_option(arg) == kwargs[arg]
 
         data = rsdict(inititems)
         data2 = rsdict(data, **kwargs)
         assert data == data2
         for arg in kwargs.keys():
-            assert data2.get_option(arg) == kwargs[arg]
+            assert data2._get_option(arg) == kwargs[arg]
 
         # unsupported dict-style initialization
         with pytest.raises(TypeError):
@@ -320,7 +320,7 @@ class TestRsdict(object):
         data = defaultdata.copy(**kwargs)
         assert data == defaultdata
         for arg in kwargs.keys():
-            assert data.get_option(arg) == kwargs[arg]
+            assert data._get_option(arg) == kwargs[arg]
 
     @pytest.mark.parametrize(*ParamKwargs, ids=ParamNames)
     def test_copy_reset(self, kwargs, inititems):
@@ -423,10 +423,10 @@ class TestRsdict(object):
 
         # items is not an option
         with pytest.raises(AttributeError):
-            data.get_option("items")
+            data._get_option("items")
         # invalid option name
         with pytest.raises(AttributeError):
-            data.get_option("hoge")
+            data._get_option("hoge")
         with pytest.raises(AttributeError):
             data.hoge = 0
 
@@ -458,4 +458,4 @@ class TestSubclass(object):
         data = rsdict_sc(inititems)
         assert data.to_dict() == inititems
         for arg in kwargs.keys():
-            assert data.get_option(arg) == kwargs[arg]
+            assert data._get_option(arg) == kwargs[arg]

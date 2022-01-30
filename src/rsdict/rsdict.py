@@ -21,7 +21,7 @@ _ErrorMessages = namedtuple(
 def check_option(name):
     def _check_option(func):
         def wrapper(self, *args, **kwargs):
-            if self.get_option(name):
+            if self._get_option(name):
                 raise AttributeError(_ErrorMessages.__getattribute__(name))
             return func(self, *args, **kwargs)
         return wrapper
@@ -123,8 +123,8 @@ class rsdict(dict):
             if type(value) is initialtype:
                 # type(value) is same as type(initial value)
                 pass
-            elif self.get_option("fixtype"):
-                if self.get_option("cast"):
+            elif self._get_option("fixtype"):
+                if self._get_option("cast"):
                     # raise if failed
                     value = initialtype(value)
                 else:
@@ -176,10 +176,10 @@ class rsdict(dict):
         size = super().__sizeof__()
         # initial values
         size += self.get_initial().__sizeof__()
-        size += self.get_option("frozen").__sizeof__()
-        size += self.get_option("fixkey").__sizeof__()
-        size += self.get_option("fixtype").__sizeof__()
-        size += self.get_option("cast").__sizeof__()
+        size += self._get_option("frozen").__sizeof__()
+        size += self._get_option("fixkey").__sizeof__()
+        size += self._get_option("fixtype").__sizeof__()
+        size += self._get_option("cast").__sizeof__()
         return size
 
     def __str__(self) -> str:
@@ -189,10 +189,10 @@ class rsdict(dict):
     def __repr__(self) -> str:
         return "rsdict({}, frozen={}, fixkey={}, fixtype={}, cast={})".format(
             super().__repr__(),
-            self.get_option("frozen"),
-            self.get_option("fixkey"),
-            self.get_option("fixtype"),
-            self.get_option("cast"),
+            self._get_option("frozen"),
+            self._get_option("fixkey"),
+            self._get_option("fixtype"),
+            self._get_option("cast"),
         )
 
     if sys.version_info >= (3, 9):
@@ -204,7 +204,7 @@ class rsdict(dict):
             """Return: rsdict"""
             if set(self.keys()) == set(self.keys() | other.keys()):
                 return super().__ior__(other)
-            elif self.get_option("fixkey"):
+            elif self._get_option("fixkey"):
                 raise AttributeError(_ErrorMessages.fixkey)
             else:
                 newkeys = (other.keys() | self.keys()) - self.keys()
@@ -257,13 +257,13 @@ class rsdict(dict):
             current (changed) values are copied as initial values and frozen.
         """
         if frozen is None:
-            frozen = bool(self.get_option("frozen"))
+            frozen = bool(self._get_option("frozen"))
         if fixkey is None:
-            fixkey = bool(self.get_option("fixkey"))
+            fixkey = bool(self._get_option("fixkey"))
         if fixtype is None:
-            fixtype = bool(self.get_option("fixtype"))
+            fixtype = bool(self._get_option("fixtype"))
         if cast is None:
-            cast = bool(self.get_option("cast"))
+            cast = bool(self._get_option("cast"))
 
         if not reset and frozen:
             # initialize with current values
@@ -350,7 +350,7 @@ class rsdict(dict):
         """
         return self.__initval.items.copy()
 
-    def get_option(self, name: str) -> bool:
+    def _get_option(self, name: str) -> bool:
         if name in ["items"]:
             # NOTE: items is in initval but not 'option'
             raise AttributeError(
