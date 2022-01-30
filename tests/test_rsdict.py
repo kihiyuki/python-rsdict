@@ -408,7 +408,7 @@ class TestRsdict(object):
             ret = data.setdefault("hoge", "fuga")
             assert ret == "fuga"
             assert data["hoge"] == ret
-            assert data.get_initial()["hoge"] == ret
+            assert data.get_initial("hoge") == ret
 
     @pytest.mark.parametrize(*ParamKwargs, ids=ParamNames)
     def test_disabled(self, kwargs, inititems):
