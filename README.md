@@ -6,7 +6,7 @@
 
 <!-- ref: rsdict.__doc__ -->
 rsdict is a **restricted** and **resetable** dictionary,
-a subclass of Python `dict` (built-in dictionary).
+a subclass of `dict` (inherits from built-in dictionary).
 
 ```python
 >>> from rsdict import rsdict
@@ -16,12 +16,17 @@ a subclass of Python `dict` (built-in dictionary).
 >>> rd
 rsdict({'foo': 0, 'bar': 'baz'}, frozen=False, fixkey=True, fixtype=True, cast=False)
 
->>> rd["foo"] = "str.value"
-TypeError
+# fixkey=True: key restriction
 >>> rd["newkey"] = 1
 AttributeError
+# fixtype=True: type restriction
+>>> rd["foo"] = "str.value"
+TypeError
 
 >>> rd["foo"] = 999
+>>> rd == d
+False
+# reset values to initial
 >>> rd.reset()
 >>> rd == d
 True
@@ -39,20 +44,22 @@ pip install rsdict
 - Key-restrict(able): If activated, cannot add or delete keys.
 - Resettable: to initial value(s).
 
-### Parameters
+### Arguments
 
-Initialize:
 `rsdict(items, frozen=False, fixkey=True, fixtype=True, cast=False)`
 
 <!-- ref: rsdict.__init__.__doc__ -->
-- items (dict): Initial items.
+- items (dict): Initial items (data).
     Built-in dictionary only. kwargs are not supported.
-- frozen (bool, optional): If True, the instance will be frozen (read-only).
-    Assigning to fields of frozen instance always raises AttributeError.
-- fixkey: (bool, optional): If True, cannot add or delete keys.
-- fixtype (bool, optional): if True, cannot change type of keys.
-- cast (bool, optional): If True, cast to initial type (if possible).
-    If False, allow only the same type of initial value.
+- frozen (bool, optional): If True,
+    the instance will be frozen (immutable).
+- fixkey (bool, optional): If True,
+    cannot add or delete keys.
+- fixtype (bool, optional): If True,
+    cannot change type of keys.
+- cast (bool, optional): If False,
+    cast to initial type (if possible).
+    If True, allow only the same type of initial value.
 
 ### Subclasses
 
@@ -74,9 +81,11 @@ from rsdict import rsdict_fixtype as rsdict
 
 - `set(key, value)`: Alias of `__setitem__`.
 - `to_dict() -> dict`: Convert to dict instance.
-- `reset(key: Optional[Any]) -> None`: Reset value to the initial value. If key is None, reset all values.
+- `reset(key: Optional[Any]) -> None`: Reset value to the initial value.
+    If key is None, reset all values.
 - `is_changed() -> bool`: If True, the values are changed from initial.
-- `get_initial() -> dict`: Return initial values.
+- `get_initial(key: Optional[Any]) -> dict | Any`: Return initial value(s).
+    If key is None, Return dict of all initial values.
 
 ### Disabled methods
 
@@ -90,10 +99,11 @@ from rsdict import rsdict_fixtype as rsdict
     `list`, `dict`, `tuple`,
     `pathlib.Path`
 - Some types (e.g. `numpy.ndarray`) cannot be cast.
+- [Tested in Python3.5, 3.6, 3.7, 3.8, 3.9, 3.10.](https://github.com/kihiyuki/python-rsdict/actions/workflows/python-package.yml)
 
 ## Examples
 
-### Initialize
+### Create (Initialize)
 
 <!-- from rsdict.__init__.__doc__ -->
 ```python
@@ -107,7 +117,7 @@ from rsdict import rsdict_fixtype as rsdict
 >>> rd = rsdict(d)
 >>> rd
 rsdict({'name': 'John', 'enable': True, 'count': 0},
-         frozen=False, fixkey=True, fixtype=False)
+        frozen=False, fixkey=True, fixtype=False)
 ```
 
 ### Get
@@ -209,6 +219,27 @@ True
 False
 ```
 
+### Copy
+
+```python
+# Create a new rsdict with different optional arguments.
+# If reset, copy initial values only.
+>>> rd["name"] = "Mike"
+>>> rd2 = rd.copy(reset=True)
+>>> rd2 == rd.get_initial()
+True
+
+# If frozen and not reset, copy current values as new initial values.
+>>> rd3 = rd.copy(frozen=True)
+>>> rd3
+rsdict({'name': 'Mike', 'enable': True, 'count': 0},
+    frozen=True, fixkey=True, fixtype=False, cast=False)
+>>> rd3 == rd
+True
+>>> rd3.get_initial() == rd.get_initial()
+False
+```
+
 ### Compare
 
 ```python
@@ -232,7 +263,7 @@ False
 
 ### Union
 
-`Python >= 3.9`
+(Python3.9 or later)
 
 ```python
 >>> rd = rsdict({"key1": 10, "key2": "abc"}, fixkey=False)

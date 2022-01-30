@@ -64,19 +64,29 @@ class TestRsdict(object):
         data = rsdict(inititems, **kwargs)
         assert data.to_dict() == inititems
         for arg in kwargs.keys():
-            assert data.get_option(arg) == kwargs[arg]
+            assert data._get_option(arg) == kwargs[arg]
 
         data = rsdict(inititems)
         data2 = rsdict(data, **kwargs)
         assert data == data2
         for arg in kwargs.keys():
-            assert data2.get_option(arg) == kwargs[arg]
+            assert data2._get_option(arg) == kwargs[arg]
 
         # unsupported dict-style initialization
         with pytest.raises(TypeError):
             data = rsdict(a=1, b="xyz")
         with pytest.raises(TypeError):
             data = rsdict((("int", 2), ("str", "xyz")))
+
+    def test_init_raise(self, inititems):
+        with pytest.raises(TypeError):
+            data = rsdict(list(inititems))
+        for kw in OptionNames:
+            # bool, int -> OK
+            data = rsdict(inititems, **{kw: 1})
+            # str -> NG
+            with pytest.raises(TypeError):
+                data = rsdict(inititems, **{kw: "TRUE"})
 
     def test_dict(self, defaultdata, inititems):
         """test attributes equivalent to (built-in) dict"""
@@ -215,11 +225,11 @@ class TestRsdict(object):
         data = rsdict(inititems, **kwargs)
         if kwargs["frozen"] or kwargs["fixkey"]:
             with pytest.raises(AttributeError):
-                data["hoge"] = "hoge"
+                data["hoge"] = "fuga"
         else:
-            data["hoge"] = "hoge"
+            data["hoge"] = "fuga"
             assert not data.is_changed()
-            assert data.get_initial()["hoge"] == "hoge"
+            assert data.get_initial("hoge") == "fuga"
 
     @pytest.mark.parametrize(*ParamKwargs, ids=ParamNames)
     def test_set_raise(self, kwargs, inititems):
@@ -320,7 +330,7 @@ class TestRsdict(object):
         data = defaultdata.copy(**kwargs)
         assert data == defaultdata
         for arg in kwargs.keys():
-            assert data.get_option(arg) == kwargs[arg]
+            assert data._get_option(arg) == kwargs[arg]
 
     @pytest.mark.parametrize(*ParamKwargs, ids=ParamNames)
     def test_copy_reset(self, kwargs, inititems):
@@ -398,7 +408,7 @@ class TestRsdict(object):
             ret = data.setdefault("hoge", "fuga")
             assert ret == "fuga"
             assert data["hoge"] == ret
-            assert data.get_initial()["hoge"] == ret
+            assert data.get_initial("hoge") == ret
 
     @pytest.mark.parametrize(*ParamKwargs, ids=ParamNames)
     def test_disabled(self, kwargs, inititems):
@@ -421,12 +431,20 @@ class TestRsdict(object):
         # sizeof
         assert data.__sizeof__() > 0
 
+        # initial values are frozen
+        initval = data.get_initial("int")
+        initval = 9
+        assert data.get_initial("int") == inititems["int"]
+        initvals = data.get_initial()
+        initvals = dict()
+        assert data.get_initial() == inititems
+
         # items is not an option
         with pytest.raises(AttributeError):
-            data.get_option("items")
+            data._get_option("items")
         # invalid option name
         with pytest.raises(AttributeError):
-            data.get_option("hoge")
+            data._get_option("hoge")
         with pytest.raises(AttributeError):
             data.hoge = 0
 
@@ -458,4 +476,4 @@ class TestSubclass(object):
         data = rsdict_sc(inititems)
         assert data.to_dict() == inititems
         for arg in kwargs.keys():
-            assert data.get_option(arg) == kwargs[arg]
+            assert data._get_option(arg) == kwargs[arg]

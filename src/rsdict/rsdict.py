@@ -3,8 +3,10 @@ from collections import namedtuple
 from typing import Any, Optional
 
 
-# _KT = TypeVar("_KT")
-# _VT = TypeVar("_VT")
+_KT = Any
+_VT = Any
+# _KT = Union[str, int, None]
+# _VT = Union[str, int, float, str, bool, None, list, dict, tuple, Path]
 _ErrorMessages = namedtuple(
     "_ErrorMessages",
     ["frozen", "fixkey", "noattrib", "noarg"]
@@ -19,16 +21,32 @@ _ErrorMessages = namedtuple(
 def check_option(name):
     def _check_option(func):
         def wrapper(self, *args, **kwargs):
-            if self.get_option(name):
+            if self._get_option(name):
                 raise AttributeError(_ErrorMessages.__getattribute__(name))
             return func(self, *args, **kwargs)
         return wrapper
     return _check_option
 
 
+def check_instance(object, classinfo, classname: str = None) -> None:
+    if classname is None:
+        classname = classinfo.__name__
+    if not isinstance(object, classinfo):
+        raise TypeError(
+            "expected {} instance, {} found".format(
+                classname,
+                type(object).__name__,
+            )
+        )
+
+
 class rsdict(dict):
     """Restricted and resetable dictionary,
     a subclass of Python dict (built-in dictionary).
+
+    Examples:
+        >>> from rsdict import rsdict
+        >>> rd = rsdict(dict(foo=1, bar="baz"))
     """
     def __init__(
         self,
@@ -38,38 +56,39 @@ class rsdict(dict):
         fixtype: bool = True,
         cast: bool = False,
     ) -> None:
-        """Initialize rsdict instance with built-in dictionary items.
+        """Initialize rsdict instance
+        with data(dict) and optional arguments(bool).
 
         Args:
-            items (dict): Initial items.
+            items (dict): Initial items (data).
                 Built-in dictionary only. kwargs are not supported.
-            frozen (bool, optional): If True, the instance will be frozen (read-only).
-                Assigning to fields of frozen instance always raises AttributeError.
-            fixkey: (bool, optional): If True, cannot add or delete keys.
-            fixtype (bool, optional): if True, cannot change type of keys.
-            cast (bool, optional): If False, cast to initial type (if possible).
+            frozen (bool, optional): If True,
+                the instance will be frozen (immutable).
+            fixkey (bool, optional): If True,
+                cannot add or delete keys.
+            fixtype (bool, optional): If True,
+                cannot change type of keys.
+            cast (bool, optional): If False,
+                cast to initial type (if possible).
                 If True, allow only the same type of initial value.
 
         Examples:
-            >>> user = rsdict(
+            >>> rd = rsdict(
             ...     dict(
             ...         name = "John",
             ...         enable = True,
-            ...         count = 0,
             ...     ),
             ...     fixtype = False,
             ... )
-
-            >>> user
-            rsdict({'name': 'John', 'enable': True, 'count': 0},
+            >>> rd
+            rsdict({'name': 'John', 'enable': True},
                 frozen=False, fixkey=True, fixtype=False, cast=False)
         """
-        if not isinstance(items, dict):
-            raise TypeError(
-                "expected dict instance, {} found".format(
-                    type(items).__name__,
-                )
-            )
+        check_instance(items, dict)
+        check_instance(frozen, int, classname="bool")
+        check_instance(fixkey, int, classname="bool")
+        check_instance(fixtype, int, classname="bool")
+        check_instance(cast, int, classname="bool")
 
         super().__init__(items)
 
@@ -87,7 +106,7 @@ class rsdict(dict):
         )
 
     @check_option("fixkey")
-    def _addkey(self, key, value) -> None:
+    def _addkey(self, key: _KT, value: _VT) -> None:
         # add initialized key
         items = self.get_initial()
         items[key] = value
@@ -95,7 +114,7 @@ class rsdict(dict):
         return super().__setitem__(key, value)
 
     @check_option("fixkey")
-    def _delkey(self, key) -> None:
+    def _delkey(self, key: _KT) -> None:
         # delete initialized key
         items = self.get_initial()
         del items[key]
@@ -104,7 +123,7 @@ class rsdict(dict):
         return super().__delitem__(key)
 
     @check_option("frozen")
-    def __setitem__(self, key: Any, value: Any) -> None:
+    def __setitem__(self, key: _KT, value: _VT) -> None:
         """Set value with key.
 
         Raises:
@@ -114,12 +133,12 @@ class rsdict(dict):
             ValueError: If fixtype and failed in casting.
         """
         if key in self.keys():
-            initialtype = type(self.get_initial()[key])
+            initialtype = type(self.get_initial(key))
             if type(value) is initialtype:
                 # type(value) is same as type(initial value)
                 pass
-            elif self.get_option("fixtype"):
-                if self.get_option("cast"):
+            elif self._get_option("fixtype"):
+                if self._get_option("cast"):
                     # raise if failed
                     value = initialtype(value)
                 else:
@@ -136,7 +155,7 @@ class rsdict(dict):
             return self._addkey(key, value)
 
     @check_option("frozen")
-    def __delitem__(self, key: Any) -> None:
+    def __delitem__(self, key: _KT) -> None:
         """Cannot delete if fixkey or frozen."""
         return self._delkey(key)
 
@@ -171,10 +190,10 @@ class rsdict(dict):
         size = super().__sizeof__()
         # initial values
         size += self.get_initial().__sizeof__()
-        size += self.get_option("frozen").__sizeof__()
-        size += self.get_option("fixkey").__sizeof__()
-        size += self.get_option("fixtype").__sizeof__()
-        size += self.get_option("cast").__sizeof__()
+        size += self._get_option("frozen").__sizeof__()
+        size += self._get_option("fixkey").__sizeof__()
+        size += self._get_option("fixtype").__sizeof__()
+        size += self._get_option("cast").__sizeof__()
         return size
 
     def __str__(self) -> str:
@@ -184,10 +203,10 @@ class rsdict(dict):
     def __repr__(self) -> str:
         return "rsdict({}, frozen={}, fixkey={}, fixtype={}, cast={})".format(
             super().__repr__(),
-            self.get_option("frozen"),
-            self.get_option("fixkey"),
-            self.get_option("fixtype"),
-            self.get_option("cast"),
+            self._get_option("frozen"),
+            self._get_option("fixkey"),
+            self._get_option("fixtype"),
+            self._get_option("cast"),
         )
 
     if sys.version_info >= (3, 9):
@@ -195,11 +214,11 @@ class rsdict(dict):
         #     return super().__or__(other)
 
         @check_option("frozen")
-        def __ior__(self, other):
+        def __ior__(self, other) -> dict:
             """Return: rsdict"""
             if set(self.keys()) == set(self.keys() | other.keys()):
                 return super().__ior__(other)
-            elif self.get_option("fixkey"):
+            elif self._get_option("fixkey"):
                 raise AttributeError(_ErrorMessages.fixkey)
             else:
                 newkeys = (other.keys() | self.keys()) - self.keys()
@@ -210,11 +229,11 @@ class rsdict(dict):
         # def __ror__(self, other):
         #     return super().__ror__(other)
 
-    def set(self, key: Any, value: Any) -> None:
+    def set(self, key: _KT, value: _VT) -> None:
         """Alias of __setitem__."""
         return self.__setitem__(key, value)
 
-    # def get(self, key: Any):
+    # def get(self, key: _KT) -> _VT:
 
     def to_dict(self) -> dict:
         """Convert to built-in dictionary (dict) instance.
@@ -232,8 +251,9 @@ class rsdict(dict):
         fixtype: Optional[bool] = None,
         cast: Optional[bool] = None,
     ):
-        """Return new rsdict instance.
-        Both current values and initial values are copied.
+        """Create new rsdict instance,
+        copy current values and initial values.
+        Optional arguments can be changed.
 
         Args:
             reset (bool, optional): If True,
@@ -248,17 +268,18 @@ class rsdict(dict):
             rsdict: New instance.
 
         Note:
-            If the values are changed and copy with `reset=False, frozen=True` option,
-            current (changed) values are copied as initial values and frozen.
+            If the values are changed and copy with
+            `reset=False, frozen=True` option,
+            current values are copied as initial values and frozen.
         """
         if frozen is None:
-            frozen = bool(self.get_option("frozen"))
+            frozen = bool(self._get_option("frozen"))
         if fixkey is None:
-            fixkey = bool(self.get_option("fixkey"))
+            fixkey = bool(self._get_option("fixkey"))
         if fixtype is None:
-            fixtype = bool(self.get_option("fixtype"))
+            fixtype = bool(self._get_option("fixtype"))
         if cast is None:
-            cast = bool(self.get_option("cast"))
+            cast = bool(self._get_option("cast"))
 
         if not reset and frozen:
             # initialize with current values
@@ -268,7 +289,7 @@ class rsdict(dict):
             items = self.get_initial()
 
         # create new instance
-        rd =  type(self)(
+        rd =  self.__class__(
             items = items,
             frozen = frozen,
             fixkey = fixkey,
@@ -276,11 +297,8 @@ class rsdict(dict):
             cast = cast,
         )
 
-        if reset:
+        if reset or frozen:
             # no need to copy current values
-            pass
-        elif frozen:
-            # cannnot copy (new instance is frozen)
             pass
         else:
             # copy current values
@@ -303,7 +321,7 @@ class rsdict(dict):
         # clear current key
         return super().clear()
 
-    def setdefault(self, key, value):
+    def setdefault(self, key: _KT, value: _VT) -> _VT:
         # return super().setdefault(key, value)
         if key in self:
             return self[key]
@@ -313,7 +331,7 @@ class rsdict(dict):
 
     @check_option("frozen")
     @check_option("fixkey")
-    def pop(self, key):
+    def pop(self, key: _KT) -> _VT:
         return super().pop(key)
 
     @check_option("frozen")
@@ -322,11 +340,11 @@ class rsdict(dict):
         return super().popitem()
 
     # TODO: (optional) check frozen deco
-    def reset(self, key: Any = None) -> None:
+    def reset(self, key: _KT = None) -> None:
         """Reset values to initial values.
 
         Args:
-            key (Any): If None, reset all values.
+            key (optional): If None, reset all values.
         """
         if key is None:
             keys = self.keys()
@@ -340,17 +358,27 @@ class rsdict(dict):
         """Reset all values to initial values."""
         self.reset()
 
-    def get_initial(self) -> dict:
+    def get_initial(self, key: _KT = None) -> Any:
         """Return initial values.
 
-        Returns:
-            dict: Initial values.
-        """
-        return self.__initval.items.copy()
+        Args:
+            key (optional): If None, get all values
 
-    def get_option(self, name):
+        Returns:
+            dict (if key is None): Initial values.
+            Any (else): Initial value.
+        """
+        if key is None:
+            return self.__initval.items
+        else:
+            return self.__initval.items[key]
+
+    def _get_option(self, name: str) -> bool:
         if name in ["items"]:
-            raise AttributeError("'{}' is not option".format(name))
+            # NOTE: items is in initval but not 'option'
+            raise AttributeError(
+                "'{}' is not option".format(name)
+            )
         elif name not in self.__initval._fields:
             raise AttributeError(
                 "{} '{}'".format(
@@ -367,11 +395,15 @@ class rsdict(dict):
         Returns:
             bool: If True, the values are changed from initial.
         """
-        return self.to_dict() != self.get_initial()
+        return self != self.get_initial()
 
 
 class rsdict_frozen(rsdict):
-    """rsdict(fozen=True)"""
+    """rsdict(fozen=True)
+
+    Examples:
+        >>> from rsdict import rsdict_frozen as rsdict
+    """
     def __init__(
         self,
         items: dict,
@@ -384,7 +416,11 @@ class rsdict_frozen(rsdict):
 
 
 class rsdict_unfix(rsdict):
-    """rsdict(fixkey=False, fixtype=False)"""
+    """rsdict(fixkey=False, fixtype=False)
+
+    Examples:
+        >>> from rsdict import rsdict_unfix as rsdict
+    """
     def __init__(
         self,
         items: dict,
@@ -397,7 +433,11 @@ class rsdict_unfix(rsdict):
 
 
 class rsdict_fixkey(rsdict):
-    """rsdict(fixkey=True, fixtype=False)"""
+    """rsdict(fixkey=True, fixtype=False)
+
+    Examples:
+        >>> from rsdict import rsdict_fixkey as rsdict
+    """
     def __init__(
         self,
         items: dict,
@@ -410,7 +450,11 @@ class rsdict_fixkey(rsdict):
 
 
 class rsdict_fixtype(rsdict):
-    """rsdict(fixkey=False, fixtype=True)"""
+    """rsdict(fixkey=False, fixtype=True)
+
+    Examples:
+        >>> from rsdict import rsdict_fixtype as rsdict
+    """
     def __init__(
         self,
         items: dict,
