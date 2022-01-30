@@ -28,7 +28,7 @@ def check_option(name):
     return _check_option
 
 
-def _instance_check(object, classinfo, classname: str = None) -> None:
+def check_instance(object, classinfo, classname: str = None) -> None:
     if classname is None:
         classname = classinfo.__name__
     if not isinstance(object, classinfo):
@@ -84,11 +84,11 @@ class rsdict(dict):
             rsdict({'name': 'John', 'enable': True},
                 frozen=False, fixkey=True, fixtype=False, cast=False)
         """
-        _instance_check(items, dict)
-        _instance_check(frozen, int, "bool")
-        _instance_check(fixkey, int, "bool")
-        _instance_check(fixtype, int, "bool")
-        _instance_check(cast, int, "bool")
+        check_instance(items, dict)
+        check_instance(frozen, int, classname="bool")
+        check_instance(fixkey, int, classname="bool")
+        check_instance(fixtype, int, classname="bool")
+        check_instance(cast, int, classname="bool")
 
         super().__init__(items)
 
