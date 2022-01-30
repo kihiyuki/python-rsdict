@@ -78,6 +78,16 @@ class TestRsdict(object):
         with pytest.raises(TypeError):
             data = rsdict((("int", 2), ("str", "xyz")))
 
+    def test_init_raise(self, inititems):
+        with pytest.raises(TypeError):
+            data = rsdict(list(inititems))
+        for kw in OptionNames:
+            # bool, int -> OK
+            data = rsdict(inititems, **{kw: 1})
+            # str -> NG
+            with pytest.raises(TypeError):
+                data = rsdict(inititems, **{kw: "TRUE"})
+
     def test_dict(self, defaultdata, inititems):
         """test attributes equivalent to (built-in) dict"""
         assert defaultdata == inititems

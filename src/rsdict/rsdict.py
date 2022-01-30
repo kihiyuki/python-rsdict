@@ -28,6 +28,18 @@ def check_option(name):
     return _check_option
 
 
+def _instance_check(object, classinfo, classname: str = None) -> None:
+    if classname is None:
+        classname = classinfo.__name__
+    if not isinstance(object, classinfo):
+        raise TypeError(
+            "expected {} instance, {} found".format(
+                classname,
+                type(object).__name__,
+            )
+        )
+
+
 class rsdict(dict):
     """Restricted and resetable dictionary,
     a subclass of Python dict (built-in dictionary).
@@ -68,13 +80,11 @@ class rsdict(dict):
             rsdict({'name': 'John', 'enable': True, 'count': 0},
                 frozen=False, fixkey=True, fixtype=False, cast=False)
         """
-        if not isinstance(items, dict):
-            # NOTE: isinstance(rsdict(), dict) is True
-            raise TypeError(
-                "expected dict instance, {} found".format(
-                    type(items).__name__,
-                )
-            )
+        _instance_check(items, dict)
+        _instance_check(frozen, int, "bool")
+        _instance_check(fixkey, int, "bool")
+        _instance_check(fixtype, int, "bool")
+        _instance_check(cast, int, "bool")
 
         super().__init__(items)
 
