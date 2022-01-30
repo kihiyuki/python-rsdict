@@ -3,8 +3,10 @@ from collections import namedtuple
 from typing import Any, Optional
 
 
-# _KT = TypeVar("_KT")
-# _VT = TypeVar("_VT")
+_KT = Any
+_VT = Any
+# _KT = Union[str, int]
+# _VT = Union[str, int, float, str, bool, None, list, dict, tuple, Path]
 _ErrorMessages = namedtuple(
     "_ErrorMessages",
     ["frozen", "fixkey", "noattrib", "noarg"]
@@ -43,15 +45,18 @@ class rsdict(dict):
         Args:
             items (dict): Initial items.
                 Built-in dictionary only. kwargs are not supported.
-            frozen (bool, optional): If True, the instance will be frozen (read-only).
-                Assigning to fields of frozen instance always raises AttributeError.
-            fixkey: (bool, optional): If True, cannot add or delete keys.
-            fixtype (bool, optional): if True, cannot change type of keys.
-            cast (bool, optional): If False, cast to initial type (if possible).
+            frozen (bool, optional): If True,
+                the instance will be frozen (read-only).
+            fixkey (bool, optional): If True,
+                cannot add or delete keys.
+            fixtype (bool, optional): If True,
+                cannot change type of keys.
+            cast (bool, optional): If False,
+                cast to initial type (if possible).
                 If True, allow only the same type of initial value.
 
         Examples:
-            >>> user = rsdict(
+            >>> rd = rsdict(
             ...     dict(
             ...         name = "John",
             ...         enable = True,
@@ -59,12 +64,12 @@ class rsdict(dict):
             ...     ),
             ...     fixtype = False,
             ... )
-
-            >>> user
+            >>> rd
             rsdict({'name': 'John', 'enable': True, 'count': 0},
                 frozen=False, fixkey=True, fixtype=False, cast=False)
         """
         if not isinstance(items, dict):
+            # NOTE: isinstance(rsdict(), dict) is True
             raise TypeError(
                 "expected dict instance, {} found".format(
                     type(items).__name__,
@@ -87,7 +92,7 @@ class rsdict(dict):
         )
 
     @check_option("fixkey")
-    def _addkey(self, key, value) -> None:
+    def _addkey(self, key: _KT, value: _VT) -> None:
         # add initialized key
         items = self.get_initial()
         items[key] = value
@@ -95,7 +100,7 @@ class rsdict(dict):
         return super().__setitem__(key, value)
 
     @check_option("fixkey")
-    def _delkey(self, key) -> None:
+    def _delkey(self, key: _KT) -> None:
         # delete initialized key
         items = self.get_initial()
         del items[key]
@@ -104,7 +109,7 @@ class rsdict(dict):
         return super().__delitem__(key)
 
     @check_option("frozen")
-    def __setitem__(self, key: Any, value: Any) -> None:
+    def __setitem__(self, key: _KT, value: _VT) -> None:
         """Set value with key.
 
         Raises:
@@ -136,7 +141,7 @@ class rsdict(dict):
             return self._addkey(key, value)
 
     @check_option("frozen")
-    def __delitem__(self, key: Any) -> None:
+    def __delitem__(self, key: _KT) -> None:
         """Cannot delete if fixkey or frozen."""
         return self._delkey(key)
 
@@ -151,7 +156,7 @@ class rsdict(dict):
             )
         return super().__getattribute__(name)
 
-    def __setattr__(self, name: str, value: Any) -> None:
+    def __setattr__(self, name: Any, value: _VT) -> None:
         enable = name in (
             dir(self) + ["_rsdict__initval"])
 
@@ -195,7 +200,7 @@ class rsdict(dict):
         #     return super().__or__(other)
 
         @check_option("frozen")
-        def __ior__(self, other):
+        def __ior__(self, other) -> dict:
             """Return: rsdict"""
             if set(self.keys()) == set(self.keys() | other.keys()):
                 return super().__ior__(other)
@@ -210,11 +215,11 @@ class rsdict(dict):
         # def __ror__(self, other):
         #     return super().__ror__(other)
 
-    def set(self, key: Any, value: Any) -> None:
+    def set(self, key: _KT, value: _VT) -> None:
         """Alias of __setitem__."""
         return self.__setitem__(key, value)
 
-    # def get(self, key: Any):
+    # def get(self, key: _KT) -> _VT:
 
     def to_dict(self) -> dict:
         """Convert to built-in dictionary (dict) instance.
@@ -268,7 +273,7 @@ class rsdict(dict):
             items = self.get_initial()
 
         # create new instance
-        rd =  type(self)(
+        rd =  self.__class__(
             items = items,
             frozen = frozen,
             fixkey = fixkey,
@@ -276,11 +281,8 @@ class rsdict(dict):
             cast = cast,
         )
 
-        if reset:
+        if reset or frozen:
             # no need to copy current values
-            pass
-        elif frozen:
-            # cannnot copy (new instance is frozen)
             pass
         else:
             # copy current values
@@ -303,7 +305,7 @@ class rsdict(dict):
         # clear current key
         return super().clear()
 
-    def setdefault(self, key, value):
+    def setdefault(self, key: _KT, value: _VT) -> _VT:
         # return super().setdefault(key, value)
         if key in self:
             return self[key]
@@ -313,7 +315,7 @@ class rsdict(dict):
 
     @check_option("frozen")
     @check_option("fixkey")
-    def pop(self, key):
+    def pop(self, key: _KT) -> _VT:
         return super().pop(key)
 
     @check_option("frozen")
@@ -322,11 +324,11 @@ class rsdict(dict):
         return super().popitem()
 
     # TODO: (optional) check frozen deco
-    def reset(self, key: Any = None) -> None:
+    def reset(self, key: Optional[_KT] = None) -> None:
         """Reset values to initial values.
 
         Args:
-            key (Any): If None, reset all values.
+            key (optional): If None, reset all values.
         """
         if key is None:
             keys = self.keys()
@@ -348,9 +350,12 @@ class rsdict(dict):
         """
         return self.__initval.items.copy()
 
-    def get_option(self, name):
+    def get_option(self, name: str) -> bool:
         if name in ["items"]:
-            raise AttributeError("'{}' is not option".format(name))
+            # NOTE: items is in initval but not 'option'
+            raise AttributeError(
+                "'{}' is not option".format(name)
+            )
         elif name not in self.__initval._fields:
             raise AttributeError(
                 "{} '{}'".format(
