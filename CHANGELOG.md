@@ -9,6 +9,10 @@
 **Merged pull requests:**
 -->
 
+## v0.1.5
+
+- Add typechecking for initial arguments.
+
 ## v0.1.4
 
 - Add subclasses `rsdict_frozen`, `rsdict_unfix`, `rsdict_fixkey`, `rsdict_fixtype`.

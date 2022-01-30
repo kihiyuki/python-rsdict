@@ -43,6 +43,10 @@ def _instance_check(object, classinfo, classname: str = None) -> None:
 class rsdict(dict):
     """Restricted and resetable dictionary,
     a subclass of Python dict (built-in dictionary).
+
+    Examples:
+        >>> from rsdict import rsdict
+        >>> rd = rsdict(dict(foo=1, bar="baz"))
     """
     def __init__(
         self,
@@ -52,13 +56,14 @@ class rsdict(dict):
         fixtype: bool = True,
         cast: bool = False,
     ) -> None:
-        """Initialize rsdict instance with built-in dictionary items.
+        """Initialize rsdict instance
+        with data(dict) and optional arguments(bool).
 
         Args:
-            items (dict): Initial items.
+            items (dict): Initial items (data).
                 Built-in dictionary only. kwargs are not supported.
             frozen (bool, optional): If True,
-                the instance will be frozen (read-only).
+                the instance will be frozen (immutable).
             fixkey (bool, optional): If True,
                 cannot add or delete keys.
             fixtype (bool, optional): If True,
@@ -72,12 +77,11 @@ class rsdict(dict):
             ...     dict(
             ...         name = "John",
             ...         enable = True,
-            ...         count = 0,
             ...     ),
             ...     fixtype = False,
             ... )
             >>> rd
-            rsdict({'name': 'John', 'enable': True, 'count': 0},
+            rsdict({'name': 'John', 'enable': True},
                 frozen=False, fixkey=True, fixtype=False, cast=False)
         """
         _instance_check(items, dict)
@@ -166,7 +170,7 @@ class rsdict(dict):
             )
         return super().__getattribute__(name)
 
-    def __setattr__(self, name: Any, value: _VT) -> None:
+    def __setattr__(self, name: str, value: Any) -> None:
         enable = name in (
             dir(self) + ["_rsdict__initval"])
 
@@ -247,8 +251,9 @@ class rsdict(dict):
         fixtype: Optional[bool] = None,
         cast: Optional[bool] = None,
     ):
-        """Return new rsdict instance.
-        Both current values and initial values are copied.
+        """Create new rsdict instance,
+        copy current values and initial values.
+        Optional arguments can be changed.
 
         Args:
             reset (bool, optional): If True,
@@ -263,8 +268,9 @@ class rsdict(dict):
             rsdict: New instance.
 
         Note:
-            If the values are changed and copy with `reset=False, frozen=True` option,
-            current (changed) values are copied as initial values and frozen.
+            If the values are changed and copy with
+            `reset=False, frozen=True` option,
+            current values are copied as initial values and frozen.
         """
         if frozen is None:
             frozen = bool(self._get_option("frozen"))
@@ -386,7 +392,11 @@ class rsdict(dict):
 
 
 class rsdict_frozen(rsdict):
-    """rsdict(fozen=True)"""
+    """rsdict(fozen=True)
+
+    Examples:
+        >>> from rsdict import rsdict_frozen as rsdict
+    """
     def __init__(
         self,
         items: dict,
@@ -399,7 +409,11 @@ class rsdict_frozen(rsdict):
 
 
 class rsdict_unfix(rsdict):
-    """rsdict(fixkey=False, fixtype=False)"""
+    """rsdict(fixkey=False, fixtype=False)
+
+    Examples:
+        >>> from rsdict import rsdict_unfix as rsdict
+    """
     def __init__(
         self,
         items: dict,
@@ -412,7 +426,11 @@ class rsdict_unfix(rsdict):
 
 
 class rsdict_fixkey(rsdict):
-    """rsdict(fixkey=True, fixtype=False)"""
+    """rsdict(fixkey=True, fixtype=False)
+
+    Examples:
+        >>> from rsdict import rsdict_fixkey as rsdict
+    """
     def __init__(
         self,
         items: dict,
@@ -425,7 +443,11 @@ class rsdict_fixkey(rsdict):
 
 
 class rsdict_fixtype(rsdict):
-    """rsdict(fixkey=False, fixtype=True)"""
+    """rsdict(fixkey=False, fixtype=True)
+
+    Examples:
+        >>> from rsdict import rsdict_fixtype as rsdict
+    """
     def __init__(
         self,
         items: dict,
