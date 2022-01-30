@@ -84,7 +84,8 @@ from rsdict import rsdict_fixtype as rsdict
 - `reset(key: Optional[Any]) -> None`: Reset value to the initial value.
     If key is None, reset all values.
 - `is_changed() -> bool`: If True, the values are changed from initial.
-- `get_initial() -> dict`: Return initial values.
+- `get_initial(key: Optional[Any]) -> dict | Any`: Return initial value(s).
+    If key is None, Return dict of all initial values.
 
 ### Disabled methods
 
@@ -116,7 +117,7 @@ from rsdict import rsdict_fixtype as rsdict
 >>> rd = rsdict(d)
 >>> rd
 rsdict({'name': 'John', 'enable': True, 'count': 0},
-         frozen=False, fixkey=True, fixtype=False)
+        frozen=False, fixkey=True, fixtype=False)
 ```
 
 ### Get
@@ -215,6 +216,27 @@ True
 # Reset all values.
 >>> rd.reset()
 >>> rd.is_changed()
+False
+```
+
+### Copy
+
+```python
+# Create a new rsdict with different optional arguments.
+# If reset, copy initial values only.
+>>> rd["name"] = "Mike"
+>>> rd2 = rd.copy(reset=True)
+>>> rd2 == rd.get_initial()
+True
+
+# If frozen and not reset, copy current values as new initial values.
+>>> rd3 = rd.copy(frozen=True)
+>>> rd3
+rsdict({'name': 'Mike', 'enable': True, 'count': 0},
+    frozen=True, fixkey=True, fixtype=False, cast=False)
+>>> rd3 == rd
+True
+>>> rd3.get_initial() == rd.get_initial()
 False
 ```
 

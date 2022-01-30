@@ -5,7 +5,7 @@ from typing import Any, Optional
 
 _KT = Any
 _VT = Any
-# _KT = Union[str, int]
+# _KT = Union[str, int, None]
 # _VT = Union[str, int, float, str, bool, None, list, dict, tuple, Path]
 _ErrorMessages = namedtuple(
     "_ErrorMessages",
@@ -133,7 +133,7 @@ class rsdict(dict):
             ValueError: If fixtype and failed in casting.
         """
         if key in self.keys():
-            initialtype = type(self.get_initial()[key])
+            initialtype = type(self.get_initial(key))
             if type(value) is initialtype:
                 # type(value) is same as type(initial value)
                 pass
@@ -340,7 +340,7 @@ class rsdict(dict):
         return super().popitem()
 
     # TODO: (optional) check frozen deco
-    def reset(self, key: Optional[_KT] = None) -> None:
+    def reset(self, key: _KT = None) -> None:
         """Reset values to initial values.
 
         Args:
@@ -358,13 +358,20 @@ class rsdict(dict):
         """Reset all values to initial values."""
         self.reset()
 
-    def get_initial(self) -> dict:
+    def get_initial(self, key: _KT = None) -> Any:
         """Return initial values.
 
+        Args:
+            key (optional): If None, get all values
+
         Returns:
-            dict: Initial values.
+            dict (if key is None): Initial values.
+            Any (else): Initial value.
         """
-        return self.__initval.items.copy()
+        if key is None:
+            return self.__initval.items
+        else:
+            return self.__initval.items[key]
 
     def _get_option(self, name: str) -> bool:
         if name in ["items"]:
@@ -388,7 +395,7 @@ class rsdict(dict):
         Returns:
             bool: If True, the values are changed from initial.
         """
-        return self.to_dict() != self.get_initial()
+        return self != self.get_initial()
 
 
 class rsdict_frozen(rsdict):

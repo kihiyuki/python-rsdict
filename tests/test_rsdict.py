@@ -225,11 +225,11 @@ class TestRsdict(object):
         data = rsdict(inititems, **kwargs)
         if kwargs["frozen"] or kwargs["fixkey"]:
             with pytest.raises(AttributeError):
-                data["hoge"] = "hoge"
+                data["hoge"] = "fuga"
         else:
-            data["hoge"] = "hoge"
+            data["hoge"] = "fuga"
             assert not data.is_changed()
-            assert data.get_initial()["hoge"] == "hoge"
+            assert data.get_initial("hoge") == "fuga"
 
     @pytest.mark.parametrize(*ParamKwargs, ids=ParamNames)
     def test_set_raise(self, kwargs, inititems):
@@ -430,6 +430,14 @@ class TestRsdict(object):
             eval(str(data)) == inititems
         # sizeof
         assert data.__sizeof__() > 0
+
+        # initial values are frozen
+        initval = data.get_initial("int")
+        initval = 9
+        assert data.get_initial("int") == inititems["int"]
+        initvals = data.get_initial()
+        initvals = dict()
+        assert data.get_initial() == inititems
 
         # items is not an option
         with pytest.raises(AttributeError):

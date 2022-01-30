@@ -12,6 +12,7 @@
 ## v0.1.5
 
 - Add typechecking for initial arguments.
+- Add optional argument: `get_initval(key)`.
 
 ## v0.1.4
 
