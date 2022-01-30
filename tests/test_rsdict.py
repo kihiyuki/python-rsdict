@@ -5,7 +5,7 @@ from pathlib import Path, PosixPath, WindowsPath
 
 import pytest
 
-from src.rsdict import rsdict
+from src.rsdict import rsdict, rsdict_frozen, rsdict_unfix, rsdict_fixkey, rsdict_fixtype
 
 
 OptionNames = ["frozen", "fixkey", "fixtype", "cast"]
@@ -52,7 +52,7 @@ def compare(x, x_init):
         return x == x_init
 
 
-class Testrsdict(object):
+class TestRsdict(object):
     def test_type(self, defaultdata):
         assert type(defaultdata) is rsdict
         assert type(defaultdata) is not dict
@@ -443,3 +443,19 @@ class Testrsdict(object):
             data.__addkey = 0
         with pytest.raises(AttributeError):
             data.__delkey = 0
+
+class TestSubclass(object):
+    @pytest.mark.parametrize(
+        tuple(["rsdict_sc", "kwargs"]),
+        [
+            (rsdict_frozen, dict(frozen=True, fixkey=True, fixtype=True, cast=False)),
+            (rsdict_unfix, dict(frozen=False, fixkey=False, fixtype=False, cast=False)),
+            (rsdict_fixkey, dict(frozen=False, fixkey=True, fixtype=False, cast=False)),
+            (rsdict_fixtype, dict(frozen=False, fixkey=False, fixtype=True, cast=False)),
+        ]
+    )
+    def test_init(self, rsdict_sc, kwargs, inititems):
+        data = rsdict_sc(inititems)
+        assert data.to_dict() == inititems
+        for arg in kwargs.keys():
+            assert data.get_option(arg) == kwargs[arg]
