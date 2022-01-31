@@ -132,7 +132,7 @@ class rsdict(dict):
             TypeError: If fixtype and not cast and type(value)!=type(initial_value).
             ValueError: If fixtype and failed in casting.
         """
-        if key in self.keys():
+        if key in self:
             initialtype = type(self.get_initial(key))
             if type(value) is initialtype:
                 # type(value) is same as type(initial value)
@@ -303,7 +303,7 @@ class rsdict(dict):
             pass
         else:
             # copy current values
-            for key in self.keys():
+            for key in self:
                 rd[key] = self[key]
         return rd
 
