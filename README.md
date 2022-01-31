@@ -127,7 +127,7 @@ Same as `dict`.
 ```python
 >>> rd["count"] == d["count"]
 True
->>> rd.get("count") == d["count"]
+>>> rd.get("count") == d.get("count")
 True
 >>> rd.get("xyz")
 None
