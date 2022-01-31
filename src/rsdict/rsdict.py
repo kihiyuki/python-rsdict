@@ -272,6 +272,7 @@ class rsdict(dict):
             `reset=False, frozen=True` option,
             current values are copied as initial values and frozen.
         """
+        check_instance(reset, int, classname="bool")
         if frozen is None:
             frozen = bool(self._get_option("frozen"))
         if fixkey is None:
