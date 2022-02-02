@@ -30,7 +30,7 @@ class Options(namedtuple(
 
 
 _ErrorMessages = ErrorMessages(
-    frozen = "cannot assign to field of frozen instance",
+    frozen = "Cannot assign to field of frozen instance",
     fixkey = "If fixkey, cannot add or delete keys",
     noattrib = "'rsdict' object has no attribute",
     noarg = "'rsdict' has no argument named",
@@ -127,6 +127,7 @@ class rsdict(dict):
     def __addkey(self, key: _KT, value: _VT) -> None:
         # add initialized key
         self.__inititems[key] = value
+        # add current key
         return super().__setitem__(key, value)
 
     @check_option("fixkey")
@@ -345,9 +346,9 @@ class rsdict(dict):
         return super().popitem()
 
     def fromkeys(self, keys, value):
-        raise AttributeError(_ErrorMessages.noattrib + "'fromkeys'")
+        """Disabled."""
+        raise AttributeError(_ErrorMessages.noattrib + " 'fromkeys'")
 
-    # TODO: (optional) check frozen deco
     def reset(self, key: _KT = None) -> None:
         """Reset values to initial values.
 
@@ -363,7 +364,7 @@ class rsdict(dict):
             self[key_] = items_init[key_]
 
     def reset_all(self) -> None:
-        """Reset all values to initial values."""
+        """Alias of reset()."""
         self.reset()
 
     def get_initial(self, key: _KT = None) -> Any:

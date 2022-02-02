@@ -1,3 +1,10 @@
+"""pytest
+
+Requirements:
+    pytest pytest-cov
+Usage:
+    pytest -vsl --cov=./src/rsdict --cov-report=term-missing
+"""
 import sys
 import math
 from itertools import product
