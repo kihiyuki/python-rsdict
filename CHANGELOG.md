@@ -9,6 +9,12 @@
 **Merged pull requests:**
 -->
 
+## v0.1.6
+
+- Make `__setitem__` faster. (74times of dict -> x22)
+- Make `__addkey` faster. (x49 -> x5)
+- Make `__delkey` faster. (x49 -> x5)
+
 ## v0.1.5
 
 - Add typechecking for initial arguments.
