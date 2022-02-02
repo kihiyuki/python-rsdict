@@ -124,13 +124,13 @@ class rsdict(dict):
         return super().__init__(items)
 
     @check_option("fixkey")
-    def _addkey(self, key: _KT, value: _VT) -> None:
+    def __addkey(self, key: _KT, value: _VT) -> None:
         # add initialized key
         self.__inititems[key] = value
         return super().__setitem__(key, value)
 
     @check_option("fixkey")
-    def _delkey(self, key: _KT) -> None:
+    def __delkey(self, key: _KT) -> None:
         # delete initialized key
         del self.__inititems[key]
         # delete current key
@@ -166,25 +166,21 @@ class rsdict(dict):
             return super().__setitem__(key, value)
         else:
             # add a new key
-            return self._addkey(key, value)
+            return self.__addkey(key, value)
 
     @check_option("frozen")
     def __delitem__(self, key: _KT) -> None:
         """Cannot delete if fixkey or frozen."""
-        return self._delkey(key)
+        return self.__delkey(key)
 
     # def __getattribute__(self, name: str) -> Any:
     #     return super().__getattribute__(name)
 
     def __setattr__(self, name: str, value: Any) -> None:
-        if self.__initialized:
-            enable = name in (
-                dir(self) + ["_rsdict__inititems"])
-        else:
-            enable = True
-
-        if enable:
-            return super().__setattr__(name, value)
+        if name in dir(self) and not name.startswith("_rsdict__"):
+            pass
+        elif not self.__initialized:
+            pass
         else:
             raise AttributeError(
                 "{} '{}'".format(
@@ -192,6 +188,7 @@ class rsdict(dict):
                     name,
                 )
             )
+        return super().__setattr__(name, value)
 
     def __sizeof__(self) -> int:
         """Return size(current values) + size(initial values)"""
@@ -232,7 +229,7 @@ class rsdict(dict):
             else:
                 newkeys = (other.keys() | self.keys()) - self.keys()
                 for key in newkeys:
-                    self._addkey(key, other[key])
+                    self.__addkey(key, other[key])
                 return super().__ior__(other)
 
         # def __ror__(self, other):
@@ -324,10 +321,7 @@ class rsdict(dict):
     @check_option("fixkey")
     def clear(self) -> None:
         # clear initialized key
-        # items = self.get_initial()
-        # items.clear()
-        # self.__initval = self.__initval._replace(items = items)
-        self.__inititems = dict()
+        self.__inititems.clear()
         # clear current key
         return super().clear()
 
