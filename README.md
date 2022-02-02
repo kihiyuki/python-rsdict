@@ -282,3 +282,7 @@ rsdict({'key1': 10, 'key2': 20, 'key3': False}, frozen=False, fixkey=False, fixt
 >>> rd.get_initial()
 {'key1': 10, 'key2': 'abc', 'key3': False}
 ```
+
+## Speed
+
+![speed.png](doc/_static/speed.png)
