@@ -285,4 +285,12 @@ rsdict({'key1': 10, 'key2': 20, 'key3': False}, frozen=False, fixkey=False, fixt
 
 ## Speed
 
-![speed.png](doc/_static/speed.png)
+rsdict is slower than `dict`
+due to its additional checking.
+
+![speed.png](docs/img/speed.png)
+
+## Changelog
+
+->
+[CHANGELOG.md](CHANGELOG.md)

@@ -11,7 +11,9 @@
 
 ## v0.1.6
 
-- Make setitem faster.
+- Make `__setitem__` faster. (74times of dict -> x22)
+- Make `__addkey` faster. (x49 -> x5)
+- Make `__delkey` faster. (x49 -> x5)
 
 ## v0.1.5
 
