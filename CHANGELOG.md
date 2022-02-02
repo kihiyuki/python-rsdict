@@ -7,11 +7,11 @@
 **Fixed bugs:**
 **Closed issues:**
 **Merged pull requests:**
+-->
 
 ## v0.1.6
 
-- Improve performance: `__setitem__`, `copy`.
--->
+- Make setitem faster.
 
 ## v0.1.5
 
