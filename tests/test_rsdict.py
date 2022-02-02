@@ -6,6 +6,7 @@ from pathlib import Path, PosixPath, WindowsPath
 import pytest
 
 from src.rsdict import rsdict, rsdict_frozen, rsdict_unfix, rsdict_fixkey, rsdict_fixtype
+from src.rsdict.rsdict import _ErrorMessages, Options
 
 
 OptionNames = ["frozen", "fixkey", "fixtype", "cast"]
@@ -52,6 +53,23 @@ def compare(x, x_init):
         return x == x_init
 
 
+class TestErrorMessages(object):
+    def test_raise(self):
+        with pytest.raises(AttributeError):
+            _ErrorMessages._replace(noattrib="hoge")
+        with pytest.raises(AttributeError):
+            _ErrorMessages._make(["hoge"] * len(_ErrorMessages._fields))
+
+
+class TestOptions(object):
+    def test_raise(self):
+        options = Options(**dict().fromkeys(OptionNames, True))
+        with pytest.raises(AttributeError):
+            options._replace(**{OptionNames[0]: False})
+        with pytest.raises(AttributeError):
+            options._make([False] * len(OptionNames))
+
+
 class TestRsdict(object):
     def test_type(self, defaultdata):
         assert type(defaultdata) is rsdict
@@ -87,6 +105,17 @@ class TestRsdict(object):
             # str -> NG
             with pytest.raises(TypeError):
                 data = rsdict(inititems, **{kw: "TRUE"})
+
+        data = rsdict(inititems)
+        # cannot access hidden attribute
+        with pytest.raises(AttributeError):
+            data._rsdict__initialized = False
+
+        # overwrite method
+        data.to_dict = 1
+        # broken attribute
+        with pytest.raises(TypeError):
+            _ = data.to_dict()
 
     def test_dict(self, defaultdata, inititems):
         """test attributes equivalent to (built-in) dict"""
