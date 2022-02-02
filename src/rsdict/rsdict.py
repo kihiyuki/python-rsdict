@@ -26,7 +26,7 @@ class Options(namedtuple(
     def _replace(self, **kwargs):
         raise AttributeError("'Options' has no attribute '_replace'")
     def _make(self, values):
-        raise AttributeError("'ErrorMessages' has no attribute '_make'")
+        raise AttributeError("'Options' has no attribute '_make'")
 
 
 _ErrorMessages = ErrorMessages(
