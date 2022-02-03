@@ -490,29 +490,28 @@ class TestRsdict(object):
         # broken inititems
         with pytest.raises(KeyError):
             data["int"] = 5
+        with pytest.raises(Exception):
+            data.reset()
 
         # overwrite inititems
         data = rsdict(inititems)
         data._rsdict__inititems["str"] = "xyz"
-        data._rsdict__inititems.update(int=2)
+        # data._rsdict__inititems.update(int=2)
         data.reset()
         assert data["str"] == "xyz"
-        assert data["int"] == 2
-        data._rsdict__inititems.update(hoge=3)
-        with pytest.raises(Exception):
-            data.reset()
-        # with pytest.raises(KeyError):
-        #     _ = data["hoge"]
-        assert data.get_initial("hoge") == 3
+        # assert data["int"] == 2
         with pytest.raises(AttributeError):
-            data.reset("hoge")
+            data._rsdict__inititems.update(hoge=3)
 
     def test_hack_raise(self, inititems):
         data = rsdict(inititems)
-
-        # items is not an option
         with pytest.raises(AttributeError):
-            data._get_option("items")
+            data._rsdict__inititems.setdefault("hoge", 5)
+        with pytest.raises(AttributeError):
+            _ = data._rsdict__inititems.pop("int")
+        with pytest.raises(AttributeError):
+            _ = data._rsdict__inititems.popitem()
+
         # invalid option name
         with pytest.raises(AttributeError):
             data._get_option("hoge")

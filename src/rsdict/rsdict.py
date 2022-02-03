@@ -61,6 +61,25 @@ def check_instance(object, classinfo, classname: str = None) -> None:
         )
 
 
+class _LimitedDict(dict):
+    """Disable update, clear, setdefault, pop, popitem.
+    """
+    def update(self, *args, **kwargs) -> None:
+        raise AttributeError("Attribute 'update' is disabled")
+
+    # def clear(self) -> None:
+    #     raise AttributeError("Attribute 'clear' is disabled")
+
+    def setdefault(self, key: _KT, value: _VT = None) -> _VT:
+        raise AttributeError("Attribute 'setdefault' is disabled")
+
+    def pop(self, key: _KT) -> _VT:
+        raise AttributeError("Attribute 'pop' is disabled")
+
+    def popitem(self) -> tuple:
+        raise AttributeError("Attribute 'popitem' is disabled")
+
+
 class rsdict(dict):
     """Restricted and resetable dictionary,
     a subclass of Python dict (built-in dictionary).
@@ -120,7 +139,7 @@ class rsdict(dict):
             fixtype=bool(fixtype),
             cast=bool(cast),
         )
-        self.__inititems = items.copy()
+        self.__inititems = _LimitedDict(items)
 
         self.__initialized = True
         return super().__init__(items)
