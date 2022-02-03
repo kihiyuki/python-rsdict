@@ -12,7 +12,13 @@ from pathlib import Path, PosixPath, WindowsPath
 
 import pytest
 
-from src.rsdict import rsdict, rsdict_frozen, rsdict_unfix, rsdict_fixkey, rsdict_fixtype
+from src.rsdict import (
+    rsdict,
+    rsdict_frozen,
+    rsdict_unfix,
+    rsdict_fixkey,
+    rsdict_fixtype
+)
 from src.rsdict.rsdict import _ErrorMessages, Options
 
 
@@ -27,7 +33,7 @@ for i, p in zip(
     for opt, p_val in zip(OptionNames, p):
         d[opt] = p_val
     Patterns[k] = d.copy()
-ParamKwargs = ( "kwargs", list(Patterns.values()))
+ParamKwargs = ("kwargs", list(Patterns.values()))
 ParamNames = list(Patterns.keys())
 # test data
 InitItems = {
@@ -147,7 +153,8 @@ class TestRsdict(object):
 
         if sys.version_info >= (3, 8):
             # reverse
-            assert list(reversed(defaultdata)) == list(defaultdata.keys())[::-1]
+            assert list(
+                reversed(defaultdata)) == list(defaultdata.keys())[::-1]
 
     def test_dict_or(self):
         if sys.version_info >= (3, 9):
@@ -343,6 +350,8 @@ class TestRsdict(object):
         assert defaultdata["str"] != inititems["str"]
         assert defaultdata != inititems
         assert defaultdata.is_changed()
+        assert defaultdata.is_changed("int")
+        assert not defaultdata.is_changed("list")
         assert defaultdata.to_dict() != defaultdata.get_initial()
 
         # partially reset
@@ -475,6 +484,32 @@ class TestRsdict(object):
         initvals = dict()
         assert data.get_initial() == inititems
 
+    def test_hack(self, inititems):
+        data = rsdict(inititems)
+        data._rsdict__inititems.clear()
+        # broken inititems
+        with pytest.raises(KeyError):
+            data["int"] = 5
+
+        # overwrite inititems
+        data = rsdict(inititems)
+        data._rsdict__inititems["str"] = "xyz"
+        data._rsdict__inititems.update(int=2)
+        data.reset()
+        assert data["str"] == "xyz"
+        assert data["int"] == 2
+        data._rsdict__inititems.update(hoge=3)
+        with pytest.raises(Exception):
+            data.reset()
+        # with pytest.raises(KeyError):
+        #     _ = data["hoge"]
+        assert data.get_initial("hoge") == 3
+        with pytest.raises(AttributeError):
+            data.reset("hoge")
+
+    def test_hack_raise(self, inititems):
+        data = rsdict(inititems)
+
         # items is not an option
         with pytest.raises(AttributeError):
             data._get_option("items")
@@ -486,7 +521,7 @@ class TestRsdict(object):
 
         # restricted attribute
         with pytest.raises(AttributeError):
-            _ = data.__initval
+            _ = data.__inititems
         with pytest.raises(AttributeError):
             _ = data.__addkey
         with pytest.raises(AttributeError):
@@ -498,14 +533,19 @@ class TestRsdict(object):
         with pytest.raises(AttributeError):
             data.__delkey = 0
 
+
 class TestSubclass(object):
     @pytest.mark.parametrize(
         tuple(["rsdict_sc", "kwargs"]),
         [
-            (rsdict_frozen, dict(frozen=True, fixkey=True, fixtype=True, cast=False)),
-            (rsdict_unfix, dict(frozen=False, fixkey=False, fixtype=False, cast=False)),
-            (rsdict_fixkey, dict(frozen=False, fixkey=True, fixtype=False, cast=False)),
-            (rsdict_fixtype, dict(frozen=False, fixkey=False, fixtype=True, cast=False)),
+            (rsdict_frozen, dict(
+                frozen=True, fixkey=True, fixtype=True, cast=False)),
+            (rsdict_unfix, dict(
+                frozen=False, fixkey=False, fixtype=False, cast=False)),
+            (rsdict_fixkey, dict(
+                frozen=False, fixkey=True, fixtype=False, cast=False)),
+            (rsdict_fixtype, dict(
+                frozen=False, fixkey=False, fixtype=True, cast=False)),
         ]
     )
     def test_init(self, rsdict_sc, kwargs, inititems):

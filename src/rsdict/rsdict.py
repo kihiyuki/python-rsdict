@@ -15,6 +15,7 @@ class ErrorMessages(namedtuple(
 ):
     def _replace(self, **kwargs):
         raise AttributeError("'ErrorMessages' has no attribute '_replace'")
+
     def _make(self, values):
         raise AttributeError("'ErrorMessages' has no attribute '_make'")
 
@@ -25,15 +26,16 @@ class Options(namedtuple(
 ):
     def _replace(self, **kwargs):
         raise AttributeError("'Options' has no attribute '_replace'")
+
     def _make(self, values):
         raise AttributeError("'Options' has no attribute '_make'")
 
 
 _ErrorMessages = ErrorMessages(
-    frozen = "Cannot assign to field of frozen instance",
-    fixkey = "If fixkey, cannot add or delete keys",
-    noattrib = "'rsdict' object has no attribute",
-    noarg = "'rsdict' has no argument named",
+    frozen="Cannot assign to field of frozen instance",
+    fixkey="If fixkey, cannot add or delete keys",
+    noattrib="'rsdict' object has no attribute",
+    noarg="'rsdict' has no argument named",
 )
 
 
@@ -113,10 +115,10 @@ class rsdict(dict):
 
         # Store initial values
         self.__options = Options(
-            frozen = bool(frozen),
-            fixkey = bool(fixkey),
-            fixtype = bool(fixtype),
-            cast = bool(cast),
+            frozen=bool(frozen),
+            fixkey=bool(fixkey),
+            fixtype=bool(fixtype),
+            cast=bool(cast),
         )
         self.__inititems = items.copy()
 
@@ -144,7 +146,8 @@ class rsdict(dict):
         Raises:
             AttributeError: If frozen, cannot change any values.
             AttributeError: If fixkey, cannot add new key.
-            TypeError: If fixtype and not cast and type(value)!=type(initial_value).
+            TypeError: If fixtype and not cast
+                and type(value)!=type(initial_value).
             ValueError: If fixtype and failed in casting.
         """
         if key in self:
@@ -298,12 +301,12 @@ class rsdict(dict):
             items = self.get_initial()
 
         # create new instance
-        rdnew =  self.__class__(
-            items = items,
-            frozen = frozen,
-            fixkey = fixkey,
-            fixtype = fixtype,
-            cast = cast,
+        rdnew = self.__class__(
+            items=items,
+            frozen=frozen,
+            fixkey=fixkey,
+            fixtype=fixtype,
+            cast=cast,
         )
 
         if reset or frozen:
@@ -330,8 +333,7 @@ class rsdict(dict):
         # clear current key
         return super().clear()
 
-    def setdefault(self, key: _KT, value: _VT) -> _VT:
-        # return super().setdefault(key, value)
+    def setdefault(self, key: _KT, value: _VT = None) -> _VT:
         if key in self:
             return self[key]
         else:
@@ -412,6 +414,7 @@ class rsdict(dict):
             return self != self.get_initial()
         else:
             return self[key] != self.get_initial(key)
+
 
 class rsdict_frozen(rsdict):
     """rsdict(fozen=True)
