@@ -83,7 +83,9 @@ from rsdict import rsdict_fixtype as rsdict
 - `to_dict() -> dict`: Convert to dict instance.
 - `reset(key: Optional[Any]) -> None`: Reset value to the initial value.
     If key is None, reset all values.
-- `is_changed() -> bool`: If True, the values are changed from initial.
+- `is_changed(key: Optional[Any]) -> bool`: If True,
+    the values are changed from initial.
+    If key is not None, check the key only.
 - `get_initial(key: Optional[Any]) -> dict | Any`: Return initial value(s).
     If key is None, Return dict of all initial values.
 
@@ -288,9 +290,9 @@ rsdict({'key1': 10, 'key2': 20, 'key3': False}, frozen=False, fixkey=False, fixt
 rsdict is slower than `dict`
 due to its additional checking.
 
-![speed.png](docs/img/speed.png)
+![Image: speed.png](docs/img/speed.png)
 
 ## Changelog
 
 ->
-[CHANGELOG.md](CHANGELOG.md)
+[CHANGELOG.md](https://github.com/kihiyuki/python-rsdict/blob/main/CHANGELOG.md)

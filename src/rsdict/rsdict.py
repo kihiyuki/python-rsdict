@@ -279,16 +279,17 @@ class rsdict(dict):
             `reset=False, frozen=True` option,
             current values are copied as initial values and frozen.
         """
-        check_instance(reset, int, classname="bool")
         if frozen is None:
-            frozen = bool(self._get_option("frozen"))
+            frozen = self._get_option("frozen")
         if fixkey is None:
-            fixkey = bool(self._get_option("fixkey"))
+            fixkey = self._get_option("fixkey")
         if fixtype is None:
-            fixtype = bool(self._get_option("fixtype"))
+            fixtype = self._get_option("fixtype")
         if cast is None:
-            cast = bool(self._get_option("cast"))
+            cast = self._get_option("cast")
 
+        check_instance(reset, int, classname="bool")
+        check_instance(frozen, int, classname="bool")
         if not reset and frozen:
             # initialize with current values
             items = self.to_dict().copy()
@@ -297,7 +298,7 @@ class rsdict(dict):
             items = self.get_initial()
 
         # create new instance
-        rd =  self.__class__(
+        rdnew =  self.__class__(
             items = items,
             frozen = frozen,
             fixkey = fixkey,
@@ -308,11 +309,13 @@ class rsdict(dict):
         if reset or frozen:
             # no need to copy current values
             pass
+        # elif self.is_changed():
         else:
             # copy current values
             for key in self:
-                rd[key] = self[key]
-        return rd
+                if self.is_changed(key):
+                    rdnew[key] = self[key]
+        return rdnew
 
     def update(self, *args, **kwargs) -> None:
         updates = dict(*args, **kwargs)
@@ -348,6 +351,13 @@ class rsdict(dict):
     def fromkeys(self, keys, value):
         """Disabled."""
         raise AttributeError(_ErrorMessages.noattrib + " 'fromkeys'")
+        # return self.__class__(
+        #     items = super().fromkeys(keys, value),
+        #     frozen = self._get_option("frozen"),
+        #     fixkey = self._get_option("fixkey"),
+        #     fixtype = self._get_option("fixtype"),
+        #     cast = self._get_option("cast"),
+        # )
 
     def reset(self, key: _KT = None) -> None:
         """Reset values to initial values.
@@ -355,13 +365,17 @@ class rsdict(dict):
         Args:
             key (optional): If None, reset all values.
         """
+        if not self.is_changed():
+            return None
         if key is None:
-            keys = self.keys()
+            items_init = self.get_initial()
+            if self.keys() != items_init.keys():
+                raise Exception("Some initial values are broken.")
         else:
-            keys = [key]
-        items_init = self.get_initial()
-        for key_ in keys:
-            self[key_] = items_init[key_]
+            value = self.get_initial(key)
+            items_init = {key: value}
+        for k, v in items_init.items():
+            self[k] = v
 
     def reset_all(self) -> None:
         """Alias of reset()."""
@@ -371,7 +385,7 @@ class rsdict(dict):
         """Return initial values.
 
         Args:
-            key (optional): If None, get all values
+            key (optional): If None, get all values.
 
         Returns:
             dict (if key is None): Initial values.
@@ -385,14 +399,19 @@ class rsdict(dict):
     def _get_option(self, name: str) -> bool:
         return self.__options.__getattribute__(name)
 
-    def is_changed(self) -> bool:
+    def is_changed(self, key: _KT = None) -> bool:
         """Return whether the values are changed.
+
+        Args:
+            key (optional): If not None, check the key only.
 
         Returns:
             bool: If True, the values are changed from initial.
         """
-        return self != self.get_initial()
-
+        if key is None:
+            return self != self.get_initial()
+        else:
+            return self[key] != self.get_initial(key)
 
 class rsdict_frozen(rsdict):
     """rsdict(fozen=True)
