@@ -15,6 +15,7 @@ class ErrorMessages(namedtuple(
 ):
     def _replace(self, **kwargs):
         raise AttributeError("'ErrorMessages' has no attribute '_replace'")
+
     def _make(self, values):
         raise AttributeError("'ErrorMessages' has no attribute '_make'")
 
@@ -25,15 +26,16 @@ class Options(namedtuple(
 ):
     def _replace(self, **kwargs):
         raise AttributeError("'Options' has no attribute '_replace'")
+
     def _make(self, values):
-        raise AttributeError("'ErrorMessages' has no attribute '_make'")
+        raise AttributeError("'Options' has no attribute '_make'")
 
 
 _ErrorMessages = ErrorMessages(
-    frozen = "cannot assign to field of frozen instance",
-    fixkey = "If fixkey, cannot add or delete keys",
-    noattrib = "'rsdict' object has no attribute",
-    noarg = "'rsdict' has no argument named",
+    frozen="Cannot assign to field of frozen instance",
+    fixkey="If fixkey, cannot add or delete keys",
+    noattrib="'rsdict' object has no attribute",
+    noarg="'rsdict' has no argument named",
 )
 
 
@@ -113,10 +115,10 @@ class rsdict(dict):
 
         # Store initial values
         self.__options = Options(
-            frozen = bool(frozen),
-            fixkey = bool(fixkey),
-            fixtype = bool(fixtype),
-            cast = bool(cast),
+            frozen=bool(frozen),
+            fixkey=bool(fixkey),
+            fixtype=bool(fixtype),
+            cast=bool(cast),
         )
         self.__inititems = items.copy()
 
@@ -127,6 +129,7 @@ class rsdict(dict):
     def __addkey(self, key: _KT, value: _VT) -> None:
         # add initialized key
         self.__inititems[key] = value
+        # add current key
         return super().__setitem__(key, value)
 
     @check_option("fixkey")
@@ -143,7 +146,8 @@ class rsdict(dict):
         Raises:
             AttributeError: If frozen, cannot change any values.
             AttributeError: If fixkey, cannot add new key.
-            TypeError: If fixtype and not cast and type(value)!=type(initial_value).
+            TypeError: If fixtype and not cast
+                and type(value)!=type(initial_value).
             ValueError: If fixtype and failed in casting.
         """
         if key in self:
@@ -256,7 +260,7 @@ class rsdict(dict):
         fixkey: Optional[bool] = None,
         fixtype: Optional[bool] = None,
         cast: Optional[bool] = None,
-    ):
+    ) -> "rsdict":
         """Create new rsdict instance,
         copy current values and initial values.
         Optional arguments can be changed.
@@ -278,16 +282,17 @@ class rsdict(dict):
             `reset=False, frozen=True` option,
             current values are copied as initial values and frozen.
         """
-        check_instance(reset, int, classname="bool")
         if frozen is None:
-            frozen = bool(self._get_option("frozen"))
+            frozen = self._get_option("frozen")
         if fixkey is None:
-            fixkey = bool(self._get_option("fixkey"))
+            fixkey = self._get_option("fixkey")
         if fixtype is None:
-            fixtype = bool(self._get_option("fixtype"))
+            fixtype = self._get_option("fixtype")
         if cast is None:
-            cast = bool(self._get_option("cast"))
+            cast = self._get_option("cast")
 
+        check_instance(reset, int, classname="bool")
+        check_instance(frozen, int, classname="bool")
         if not reset and frozen:
             # initialize with current values
             items = self.to_dict().copy()
@@ -296,22 +301,24 @@ class rsdict(dict):
             items = self.get_initial()
 
         # create new instance
-        rd =  self.__class__(
-            items = items,
-            frozen = frozen,
-            fixkey = fixkey,
-            fixtype = fixtype,
-            cast = cast,
+        rdnew = self.__class__(
+            items=items,
+            frozen=frozen,
+            fixkey=fixkey,
+            fixtype=fixtype,
+            cast=cast,
         )
 
         if reset or frozen:
             # no need to copy current values
             pass
+        # elif self.is_changed():
         else:
             # copy current values
             for key in self:
-                rd[key] = self[key]
-        return rd
+                if self.is_changed(key):
+                    rdnew[key] = self[key]
+        return rdnew
 
     def update(self, *args, **kwargs) -> None:
         updates = dict(*args, **kwargs)
@@ -326,8 +333,7 @@ class rsdict(dict):
         # clear current key
         return super().clear()
 
-    def setdefault(self, key: _KT, value: _VT) -> _VT:
-        # return super().setdefault(key, value)
+    def setdefault(self, key: _KT, value: _VT = None) -> _VT:
         if key in self:
             return self[key]
         else:
@@ -344,33 +350,37 @@ class rsdict(dict):
     def popitem(self) -> tuple:
         return super().popitem()
 
-    def fromkeys(self, keys, value):
-        raise AttributeError(_ErrorMessages.noattrib + "'fromkeys'")
+    @classmethod
+    def fromkeys(cls, keys: _KT, value: _VT = None) -> "rsdict":
+        return cls(dict.fromkeys(keys, value))
 
-    # TODO: (optional) check frozen deco
     def reset(self, key: _KT = None) -> None:
         """Reset values to initial values.
 
         Args:
             key (optional): If None, reset all values.
         """
+        if not self.is_changed():
+            return None
         if key is None:
-            keys = self.keys()
+            items_init = self.get_initial()
+            if self.keys() != items_init.keys():
+                raise Exception("Some initial values are broken.")
         else:
-            keys = [key]
-        items_init = self.get_initial()
-        for key_ in keys:
-            self[key_] = items_init[key_]
+            value = self.get_initial(key)
+            items_init = {key: value}
+        for k, v in items_init.items():
+            self[k] = v
 
     def reset_all(self) -> None:
-        """Reset all values to initial values."""
+        """Alias of reset()."""
         self.reset()
 
     def get_initial(self, key: _KT = None) -> Any:
         """Return initial values.
 
         Args:
-            key (optional): If None, get all values
+            key (optional): If None, get all values.
 
         Returns:
             dict (if key is None): Initial values.
@@ -384,13 +394,19 @@ class rsdict(dict):
     def _get_option(self, name: str) -> bool:
         return self.__options.__getattribute__(name)
 
-    def is_changed(self) -> bool:
+    def is_changed(self, key: _KT = None) -> bool:
         """Return whether the values are changed.
+
+        Args:
+            key (optional): If not None, check the key only.
 
         Returns:
             bool: If True, the values are changed from initial.
         """
-        return self != self.get_initial()
+        if key is None:
+            return self != self.get_initial()
+        else:
+            return self[key] != self.get_initial(key)
 
 
 class rsdict_frozen(rsdict):

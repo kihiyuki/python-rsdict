@@ -9,6 +9,11 @@
 **Merged pull requests:**
 -->
 
+## v0.1.7
+
+- Add option argument.: `get_option(key)`
+- Add support for `fromdict`.
+
 ## v0.1.6
 
 - Make `__setitem__` faster. (74times of dict -> x22)
@@ -18,7 +23,7 @@
 ## v0.1.5
 
 - Add typechecking for initial arguments.
-- Add optional argument: `get_initval(key)`.
+- Add optional argument.: `get_initval(key)`
 
 ## v0.1.4
 
