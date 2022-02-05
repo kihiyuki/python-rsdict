@@ -6,4 +6,4 @@ from .rsdict import (
     rsdict_fixkey
 )
 
-__version__ = "0.1.7a"
+__version__ = "0.1.7"
