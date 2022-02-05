@@ -12,6 +12,7 @@
 ## v0.1.7
 
 - Add option argument.: `get_option(key)`
+- Add support for `fromdict`.
 
 ## v0.1.6
 

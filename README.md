@@ -89,10 +89,6 @@ from rsdict import rsdict_fixtype as rsdict
 - `get_initial(key: Optional[Any]) -> dict | Any`: Return initial value(s).
     If key is None, Return dict of all initial values.
 
-### Disabled methods
-
-- `fromkeys()`
-
 ### Notes
 
 - Expected types of value:

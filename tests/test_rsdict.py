@@ -33,8 +33,26 @@ for i, p in zip(
     for opt, p_val in zip(OptionNames, p):
         d[opt] = p_val
     Patterns[k] = d.copy()
-ParamKwargs = ("kwargs", list(Patterns.values()))
-ParamNames = list(Patterns.keys())
+ParamKwargs = (
+    "kwargs",
+    list(Patterns.values()))
+ParamKwargNames = list(Patterns.keys())
+ParamSubclass = (
+    ("rsdict_sc", "kwargs"),
+    [
+        (rsdict, dict(
+            frozen=False, fixkey=True, fixtype=True, cast=False)),
+        (rsdict_frozen, dict(
+            frozen=True, fixkey=True, fixtype=True, cast=False)),
+        (rsdict_unfix, dict(
+            frozen=False, fixkey=False, fixtype=False, cast=False)),
+        (rsdict_fixkey, dict(
+            frozen=False, fixkey=True, fixtype=False, cast=False)),
+        (rsdict_fixtype, dict(
+            frozen=False, fixkey=False, fixtype=True, cast=False)),
+    ]
+)
+
 # test data
 InitItems = {
     "int": 0,
@@ -90,7 +108,7 @@ class TestRsdict(object):
         assert isinstance(defaultdata, rsdict)
         assert isinstance(defaultdata, dict)
 
-    @pytest.mark.parametrize(*ParamKwargs, ids=ParamNames)
+    @pytest.mark.parametrize(*ParamKwargs, ids=ParamKwargNames)
     def test_init(self, kwargs, inititems):
         data = rsdict(inititems, **kwargs)
         assert data.to_dict() == inititems
@@ -196,7 +214,7 @@ class TestRsdict(object):
         with pytest.raises(AttributeError):
             _ = defaultdata.int
 
-    @pytest.mark.parametrize(*ParamKwargs, ids=ParamNames)
+    @pytest.mark.parametrize(*ParamKwargs, ids=ParamKwargNames)
     def test_del(self, kwargs, inititems):
         data = rsdict(inititems, **kwargs)
         if kwargs["frozen"] or kwargs["fixkey"]:
@@ -232,7 +250,7 @@ class TestRsdict(object):
         ("path", "data", Path("data")),
         (0, 0, False),
     ])
-    @pytest.mark.parametrize(*ParamKwargs, ids=ParamNames)
+    @pytest.mark.parametrize(*ParamKwargs, ids=ParamKwargNames)
     def test_set(self, kwargs, key, val_set, val_get, inititems):
         data = rsdict(inititems, **kwargs)
         val_cast = type(val_set) is not type(val_get)
@@ -263,7 +281,7 @@ class TestRsdict(object):
         else:
             assert compare(val_set, data[key])
 
-    @pytest.mark.parametrize(*ParamKwargs, ids=ParamNames)
+    @pytest.mark.parametrize(*ParamKwargs, ids=ParamKwargNames)
     def test_set_addkey(self, kwargs, inititems):
         data = rsdict(inititems, **kwargs)
         if kwargs["frozen"] or kwargs["fixkey"]:
@@ -274,7 +292,7 @@ class TestRsdict(object):
             assert not data.is_changed()
             assert data.get_initial("hoge") == "fuga"
 
-    @pytest.mark.parametrize(*ParamKwargs, ids=ParamNames)
+    @pytest.mark.parametrize(*ParamKwargs, ids=ParamKwargNames)
     def test_set_raise(self, kwargs, inititems):
         data = rsdict(inititems, **kwargs)
         # setattr is not allowed
@@ -295,7 +313,7 @@ class TestRsdict(object):
             with pytest.raises(TypeError):
                 data["float"] = None
 
-    @pytest.mark.parametrize(*ParamKwargs, ids=ParamNames)
+    @pytest.mark.parametrize(*ParamKwargs, ids=ParamKwargNames)
     def test_update(self, kwargs, inititems):
         data = rsdict(inititems, **kwargs)
         if not kwargs["frozen"] and not kwargs["fixkey"]:
@@ -369,7 +387,7 @@ class TestRsdict(object):
         assert not data.is_changed()
         assert data == inititems
 
-    @pytest.mark.parametrize(*ParamKwargs, ids=ParamNames)
+    @pytest.mark.parametrize(*ParamKwargs, ids=ParamKwargNames)
     def test_copy_option(self, kwargs, defaultdata):
         # change option
         data = defaultdata.copy(**kwargs)
@@ -377,7 +395,7 @@ class TestRsdict(object):
         for arg in kwargs.keys():
             assert data._get_option(arg) == kwargs[arg]
 
-    @pytest.mark.parametrize(*ParamKwargs, ids=ParamNames)
+    @pytest.mark.parametrize(*ParamKwargs, ids=ParamKwargNames)
     def test_copy_reset(self, kwargs, inititems):
         data = rsdict(inititems, **kwargs)
 
@@ -412,7 +430,7 @@ class TestRsdict(object):
             assert data2.to_dict() == data.to_dict()
             assert data2.get_initial() == data.to_dict()
 
-    @pytest.mark.parametrize(*ParamKwargs, ids=ParamNames)
+    @pytest.mark.parametrize(*ParamKwargs, ids=ParamKwargNames)
     def test_delkey(self, kwargs, inititems):
         data = rsdict(inititems, **kwargs)
         if kwargs["frozen"] or kwargs["fixkey"]:
@@ -439,7 +457,7 @@ class TestRsdict(object):
             data.reset()
             assert data.to_dict() == dict()
 
-    @pytest.mark.parametrize(*ParamKwargs, ids=ParamNames)
+    @pytest.mark.parametrize(*ParamKwargs, ids=ParamKwargNames)
     def test_setdefault(self, kwargs, inititems):
         data = rsdict(inititems, **kwargs)
         # key already exists
@@ -455,13 +473,7 @@ class TestRsdict(object):
             assert data["hoge"] == ret
             assert data.get_initial("hoge") == ret
 
-    @pytest.mark.parametrize(*ParamKwargs, ids=ParamNames)
-    def test_disabled(self, kwargs, inititems):
-        data = rsdict(inititems, **kwargs)
-        with pytest.raises(AttributeError):
-            _ = data.fromkeys(["a", "b"], 1)
-
-    @pytest.mark.parametrize(*ParamKwargs, ids=ParamNames)
+    @pytest.mark.parametrize(*ParamKwargs, ids=ParamKwargNames)
     def test_other(self, kwargs, inititems):
         data = rsdict(inititems, **kwargs)
 
@@ -535,21 +547,28 @@ class TestRsdict(object):
 
 
 class TestSubclass(object):
-    @pytest.mark.parametrize(
-        tuple(["rsdict_sc", "kwargs"]),
-        [
-            (rsdict_frozen, dict(
-                frozen=True, fixkey=True, fixtype=True, cast=False)),
-            (rsdict_unfix, dict(
-                frozen=False, fixkey=False, fixtype=False, cast=False)),
-            (rsdict_fixkey, dict(
-                frozen=False, fixkey=True, fixtype=False, cast=False)),
-            (rsdict_fixtype, dict(
-                frozen=False, fixkey=False, fixtype=True, cast=False)),
-        ]
-    )
+    @pytest.mark.parametrize(*ParamSubclass)
     def test_init(self, rsdict_sc, kwargs, inititems):
         data = rsdict_sc(inititems)
         assert data.to_dict() == inititems
+        for arg in kwargs.keys():
+            assert data._get_option(arg) == kwargs[arg]
+
+    @pytest.mark.parametrize(*ParamSubclass)
+    def test_fromkeys(self, rsdict_sc, kwargs):
+        data = rsdict_sc.fromkeys(["a", "b"])
+        assert data["a"] is None
+        assert data["b"] is None
+        assert not data.is_changed()
+        if kwargs["frozen"]:
+            with pytest.raises(AttributeError):
+                data["a"] = 1
+        elif kwargs["fixtype"]:
+            with pytest.raises(TypeError):
+                data["a"] = 1
+        else:
+            data["a"] = 1
+            assert data["a"] == 1
+            assert data.is_changed()
         for arg in kwargs.keys():
             assert data._get_option(arg) == kwargs[arg]

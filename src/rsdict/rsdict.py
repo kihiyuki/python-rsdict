@@ -260,7 +260,7 @@ class rsdict(dict):
         fixkey: Optional[bool] = None,
         fixtype: Optional[bool] = None,
         cast: Optional[bool] = None,
-    ):
+    ) -> "rsdict":
         """Create new rsdict instance,
         copy current values and initial values.
         Optional arguments can be changed.
@@ -350,16 +350,9 @@ class rsdict(dict):
     def popitem(self) -> tuple:
         return super().popitem()
 
-    def fromkeys(self, keys, value):
-        """Disabled."""
-        raise AttributeError(_ErrorMessages.noattrib + " 'fromkeys'")
-        # return self.__class__(
-        #     items = super().fromkeys(keys, value),
-        #     frozen = self._get_option("frozen"),
-        #     fixkey = self._get_option("fixkey"),
-        #     fixtype = self._get_option("fixtype"),
-        #     cast = self._get_option("cast"),
-        # )
+    @classmethod
+    def fromkeys(cls, keys: _KT, value: _VT = None) -> "rsdict":
+        return cls(dict.fromkeys(keys, value))
 
     def reset(self, key: _KT = None) -> None:
         """Reset values to initial values.
