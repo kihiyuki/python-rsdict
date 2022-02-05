@@ -91,7 +91,6 @@ from rsdict import rsdict_fixtype as rsdict
 
 ### Disabled methods
 
-<!-- ref: rsdict.__getattribute__ -->
 - `fromkeys()`
 
 ### Notes
@@ -120,6 +119,11 @@ from rsdict import rsdict_fixtype as rsdict
 >>> rd
 rsdict({'name': 'John', 'enable': True, 'count': 0},
         frozen=False, fixkey=True, fixtype=False)
+
+>>> type(rd) is dict
+False
+>>> isinstance(rd, dict)
+True
 ```
 
 ### Get
@@ -146,7 +150,7 @@ KeyError
 
 ```python
 # If frozen, always raise an exception.
->>> rd_frozen = rsdict(dict(count=1), frozen=True)
+>>> rd_frozen = rsdict(d, frozen=True)
 >>> rd_frozen["count"] = 2
 AttributeError
 ```
@@ -157,15 +161,17 @@ AttributeError
 TypeError
 
 # If fixtype and cast, cast value to initial type.
->>> rd["count"] = "2"
->>> rd["count"]
+>>> rd_cast = rsdict(d, cast=True)
+>>> rd_cast["count"] = "2"
+>>> rd_cast["count"]
 2
->>> rd["count"] = "abc"
+>>> rd_cast["count"] = "abc"
 ValueError
 
 # If not fixtype, anything can be set.
->>> rd["count"] = "2"
->>> rd["count"]
+>>> rd_typefree = rsdict(d, fixtype=False)
+>>> rd_typefree["count"] = "2"
+>>> rd_typefree["count"]
 '2'
 ```
 
@@ -175,8 +181,9 @@ ValueError
 AttributeError
 
 # If not fixkey, a new key can be set.
->>> rd["location"] = 9
->>> rd["location"]
+>>> rd_keyfree = rsdict(d, fixkey=False)
+>>> rd_keyfree["location"] = 9
+>>> rd_keyfree["location"]
 9
 ```
 
@@ -279,7 +286,8 @@ False
 
 >>> rd |= d
 >>> rd
-rsdict({'key1': 10, 'key2': 20, 'key3': False}, frozen=False, fixkey=False, fixtype=True, cast=False)
+rsdict({'key1': 10, 'key2': 20, 'key3': False},
+    frozen=False, fixkey=False, fixtype=True, cast=False)
 # Add initial values of new keys only.
 >>> rd.get_initial()
 {'key1': 10, 'key2': 'abc', 'key3': False}
@@ -290,7 +298,7 @@ rsdict({'key1': 10, 'key2': 20, 'key3': False}, frozen=False, fixkey=False, fixt
 rsdict is slower than `dict`
 due to its additional checking.
 
-![Image: speed.png](docs/img/speed.png)
+![Image: https://github.com/kihiyuki/python-rsdict/blob/main/docs/img/speed.png](docs/img/speed.png)
 
 ## Changelog
 
