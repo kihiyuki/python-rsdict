@@ -1,12 +1,13 @@
 """pytest
 
 Requirements:
-    pytest pytest-cov
+pip install -r requirements/test.txt
 Usage:
-    pytest -vsl --cov=./src/rsdict --cov-report=term-missing
+pytest -vsl --cov=./src/rsdict --cov-report=term-missing
 """
 import sys
 import math
+import copy
 from itertools import product
 from pathlib import Path, PosixPath, WindowsPath
 
@@ -503,7 +504,22 @@ class TestRsdict(object):
         with pytest.raises(KeyError):
             data["int"] = 5
 
-        # overwrite inititems
+        # shallow copy (same as dict)
+        data = rsdict(inititems, frozen=True)
+        data["list"].append("hello")
+        assert data["list"] == inititems["list"]
+
+        # change frozen value
+        data = rsdict(copy.deepcopy(inititems), frozen=True)
+        data["list"].append("hello")
+        assert data["list"] != inititems["list"]
+
+        # overwrite inititems (compound objects)
+        data = rsdict(inititems)
+        data.get_initial("list").append("hello")
+        assert data.get_initial("list") != inititems["list"]
+
+        # overwrite inititems (direct)
         data = rsdict(inititems)
         data._rsdict__inititems["str"] = "xyz"
         data._rsdict__inititems.update(int=2)
