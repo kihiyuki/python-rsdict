@@ -70,8 +70,6 @@ class rsdict(dict):
         >>> from rsdict import rsdict
         >>> rd = rsdict(dict(foo=1, bar="baz"))
     """
-    __initialized = False
-
     def __init__(
         self,
         items: dict,
@@ -126,19 +124,18 @@ class rsdict(dict):
             items = items.to_dict()
         self.__inititems = copy.deepcopy(items)
 
-        self.__initialized = True
         return super().__init__(items)
 
     @check_option("fixkey")
     def __addkey(self, key: _KT, value: _VT) -> None:
-        # add initialized key
+        # add initial key
         self.__inititems[key] = copy.deepcopy(value)
         # add current key
         return super().__setitem__(key, value)
 
     @check_option("fixkey")
     def __delkey(self, key: _KT) -> None:
-        # delete initialized key
+        # delete initial key
         del self.__inititems[key]
         # delete current key
         return super().__delitem__(key)
@@ -185,17 +182,20 @@ class rsdict(dict):
     #     return super().__getattribute__(name)
 
     def __setattr__(self, name: str, value: Any) -> None:
-        if name in dir(self) and not name.startswith("_rsdict__"):
-            pass
-        elif not self.__initialized:
+        try:
+            _ = self.__inititems
+        except:
             pass
         else:
-            raise AttributeError(
-                "{} '{}'".format(
-                    _ErrorMessages.noattrib,
-                    name,
+            if name in dir(self) and not name.startswith("_rsdict__"):
+                pass
+            else:
+                raise AttributeError(
+                    "{} '{}'".format(
+                        _ErrorMessages.noattrib,
+                        name,
+                    )
                 )
-            )
         return super().__setattr__(name, value)
 
     def __sizeof__(self) -> int:
@@ -332,7 +332,7 @@ class rsdict(dict):
     @check_option("frozen")
     @check_option("fixkey")
     def clear(self) -> None:
-        # clear initialized key
+        # clear initial key
         self.__inititems.clear()
         # clear current key
         return super().clear()
