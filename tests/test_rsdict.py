@@ -20,7 +20,7 @@ from src.rsdict import (
     rsdict_fixkey,
     rsdict_fixtype
 )
-from src.rsdict.rsdict import _ErrorMessages, Options
+from src.rsdict.rsdict import _ERRORMESSAGES, Options
 
 
 OptionNames = ["frozen", "fixkey", "fixtype", "cast"]
@@ -87,18 +87,18 @@ def compare(x, x_init):
 
 class TestErrorMessages(object):
     def test_raise(self):
-        with pytest.raises(AttributeError):
-            _ErrorMessages._replace(noattrib="hoge")
-        with pytest.raises(AttributeError):
-            _ErrorMessages._make(["hoge"] * len(_ErrorMessages._fields))
+        with pytest.raises(TypeError):
+            _ERRORMESSAGES._replace(noattrib="hoge")
+        with pytest.raises(TypeError):
+            _ERRORMESSAGES._make(["hoge"] * len(_ERRORMESSAGES._fields))
 
 
 class TestOptions(object):
     def test_raise(self):
         options = Options(**dict().fromkeys(OptionNames, True))
-        with pytest.raises(AttributeError):
+        with pytest.raises(TypeError):
             options._replace(**{OptionNames[0]: False})
-        with pytest.raises(AttributeError):
+        with pytest.raises(TypeError):
             options._make([False] * len(OptionNames))
 
 
@@ -527,9 +527,13 @@ class TestRsdict(object):
         # data._rsdict__inititems.update(int=2)
         data.reset()
         assert data["str"] == "xyz"
-        # assert data["int"] == 2
+        assert data["int"] == 2
+        data._rsdict__inititems.update(hoge=3)
+        assert data.get_initial("hoge") == 3
         with pytest.raises(AttributeError):
-            data._rsdict__inititems.update(hoge=3)
+            data.reset("hoge")
+        with pytest.raises(UnboundLocalError):
+            data.reset()
 
     def test_hack_raise(self, inititems):
         data = rsdict(inititems)
