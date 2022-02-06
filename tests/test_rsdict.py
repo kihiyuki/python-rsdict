@@ -87,18 +87,18 @@ def compare(x, x_init):
 
 class TestErrorMessages(object):
     def test_raise(self):
-        with pytest.raises(AttributeError):
+        with pytest.raises(TypeError):
             _ErrorMessages._replace(noattrib="hoge")
-        with pytest.raises(AttributeError):
+        with pytest.raises(TypeError):
             _ErrorMessages._make(["hoge"] * len(_ErrorMessages._fields))
 
 
 class TestOptions(object):
     def test_raise(self):
         options = Options(**dict().fromkeys(OptionNames, True))
-        with pytest.raises(AttributeError):
+        with pytest.raises(TypeError):
             options._replace(**{OptionNames[0]: False})
-        with pytest.raises(AttributeError):
+        with pytest.raises(TypeError):
             options._make([False] * len(OptionNames))
 
 

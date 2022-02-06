@@ -12,24 +12,16 @@ _VT = Any
 
 class ErrorMessages(namedtuple(
     "ErrorMessages",
-    ["frozen", "fixkey", "noattrib", "noarg"])
-):
-    def _replace(self, **kwargs):
-        raise AttributeError("'ErrorMessages' has no attribute '_replace'")
-
-    def _make(self, values):
-        raise AttributeError("'ErrorMessages' has no attribute '_make'")
+    ["frozen", "fixkey", "noattrib", "noarg"])):
+    """Frozen namedtuple."""
+    _make = _replace = None
 
 
 class Options(namedtuple(
     "Options",
-    ["frozen", "fixkey", "fixtype", "cast"])
-):
-    def _replace(self, **kwargs):
-        raise AttributeError("'Options' has no attribute '_replace'")
-
-    def _make(self, values):
-        raise AttributeError("'Options' has no attribute '_make'")
+    ["frozen", "fixkey", "fixtype", "cast"])):
+    """Frozen namedtuple."""
+    _make = _replace = None
 
 
 _ErrorMessages = ErrorMessages(
@@ -40,7 +32,12 @@ _ErrorMessages = ErrorMessages(
 )
 
 
-def check_option(name):
+def check_option(name: str):
+    """Decorator for checking `Options`.
+
+    Args:
+        name (str): Fieldname of `Options` class.
+    """
     def _check_option(func):
         def wrapper(self, *args, **kwargs):
             if self._get_option(name):
