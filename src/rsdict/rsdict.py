@@ -10,23 +10,27 @@ _VT = Any
 # _VT = Union[str, int, float, str, bool, None, list, dict, tuple, Path]
 
 
-class ErrorMessages(namedtuple(
-    "ErrorMessages",
-    ["frozen", "fixkey", "noattrib", "noarg"])):
+class ErrorMessages(
+    namedtuple(
+        "ErrorMessages",
+        ["frozen", "fixkey", "fixtype", "cast", "noattrib", "noarg"])):
     """Frozen namedtuple."""
     _make = _replace = None
 
 
-class Options(namedtuple(
-    "Options",
-    ["frozen", "fixkey", "fixtype", "cast"])):
+class Options(
+    namedtuple(
+        "Options",
+        ["frozen", "fixkey", "fixtype", "cast"])):
     """Frozen namedtuple."""
     _make = _replace = None
 
 
-_ErrorMessages = ErrorMessages(
+_ERRORMESSAGES = ErrorMessages(
     frozen="Cannot assign to field of frozen instance",
     fixkey="If fixkey, cannot add or delete keys",
+    fixtype="",
+    cast="",
     noattrib="'rsdict' object has no attribute",
     noarg="'rsdict' has no argument named",
 )
@@ -41,13 +45,21 @@ def check_option(name: str):
     def _check_option(func):
         def wrapper(self, *args, **kwargs):
             if self._get_option(name):
-                raise AttributeError(_ErrorMessages.__getattribute__(name))
+                raise AttributeError(_ERRORMESSAGES.__getattribute__(name))
             return func(self, *args, **kwargs)
         return wrapper
     return _check_option
 
 
 def check_instance(object, classinfo, classname: str = None) -> None:
+    """Check type of object by `isinstance`.
+
+    Args:
+        classname (str, optional): Name of expected type.
+
+    Raises:
+        TypeError: If `isinstance()` is False.
+    """
     if classname is None:
         classname = classinfo.__name__
     if not isinstance(object, classinfo):
@@ -103,13 +115,14 @@ class rsdict(dict):
             rsdict({'name': 'John', 'enable': True},
                 frozen=False, fixkey=True, fixtype=False, cast=False)
         """
+        # check argument types
         check_instance(items, dict)
         check_instance(frozen, int, classname="bool")
         check_instance(fixkey, int, classname="bool")
         check_instance(fixtype, int, classname="bool")
         check_instance(cast, int, classname="bool")
 
-        # Store initial values
+        # create Options object
         self.__options = Options(
             frozen=bool(frozen),
             fixkey=bool(fixkey),
@@ -117,6 +130,8 @@ class rsdict(dict):
             cast=bool(cast),
         )
 
+        # store initial values in __inititems
+        # NOTE: Cannot deepcopy restdict
         if type(items) is type(self):
             items = items.to_dict()
         self.__inititems = copy.deepcopy(items)
@@ -125,6 +140,7 @@ class rsdict(dict):
 
     @check_option("fixkey")
     def __addkey(self, key: _KT, value: _VT) -> None:
+        """Add a new key to instance."""
         # add initial key
         self.__inititems[key] = copy.deepcopy(value)
         # add current key
@@ -132,6 +148,7 @@ class rsdict(dict):
 
     @check_option("fixkey")
     def __delkey(self, key: _KT) -> None:
+        """Delete a key from instance."""
         # delete initial key
         del self.__inititems[key]
         # delete current key
@@ -181,7 +198,7 @@ class rsdict(dict):
     def __setattr__(self, name: str, value: Any) -> None:
         try:
             _ = self.__inititems
-        except:
+        except Exception:
             pass
         else:
             if name in dir(self) and not name.startswith("_rsdict__"):
@@ -189,7 +206,7 @@ class rsdict(dict):
             else:
                 raise AttributeError(
                     "{} '{}'".format(
-                        _ErrorMessages.noattrib,
+                        _ERRORMESSAGES.noattrib,
                         name,
                     )
                 )
@@ -226,11 +243,11 @@ class rsdict(dict):
 
         @check_option("frozen")
         def __ior__(self, other) -> dict:
-            """Return: rsdict"""
+            """Returns: rsdict"""
             if set(self.keys()) == set(self.keys() | other.keys()):
                 return super().__ior__(other)
             elif self._get_option("fixkey"):
-                raise AttributeError(_ErrorMessages.fixkey)
+                raise AttributeError(_ERRORMESSAGES.fixkey)
             else:
                 newkeys = (other.keys() | self.keys()) - self.keys()
                 for key in newkeys:
@@ -356,7 +373,7 @@ class rsdict(dict):
         return cls(dict.fromkeys(keys, value))
 
     def reset(self, key: _KT = None) -> None:
-        """Reset values to initial values.
+        """Reset value(s) to initial value(s).
 
         Args:
             key (optional): If None, reset all values.
@@ -366,7 +383,9 @@ class rsdict(dict):
         if key is None:
             items_init = self.get_initial()
             if self.keys() != items_init.keys():
-                raise Exception("Some initial values are broken.")
+                raise UnboundLocalError(
+                    "Current and initial keys do not match"
+                )
         else:
             value = self.get_initial(key)
             items_init = {key: value}
@@ -378,7 +397,7 @@ class rsdict(dict):
         self.reset()
 
     def get_initial(self, key: _KT = None) -> Any:
-        """Return initial values.
+        """Get initial value(s).
 
         Args:
             key (optional): If None, get all values.
@@ -396,7 +415,7 @@ class rsdict(dict):
         return self.__options.__getattribute__(name)
 
     def is_changed(self, key: _KT = None) -> bool:
-        """Return whether the values are changed.
+        """Return whether the value(s) are changed.
 
         Args:
             key (optional): If not None, check the key only.
