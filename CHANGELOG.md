@@ -9,6 +9,10 @@
 **Merged pull requests:**
 -->
 
+## v0.1.8
+
+- Use deepcopy for initial items.
+
 ## v0.1.7
 
 - Add option argument.: `get_option(key)`

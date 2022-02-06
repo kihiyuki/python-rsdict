@@ -89,15 +89,6 @@ from rsdict import rsdict_fixtype as rsdict
 - `get_initial(key: Optional[Any]) -> dict | Any`: Return initial value(s).
     If key is None, Return dict of all initial values.
 
-### Notes
-
-- Expected types of value:
-    `int`, `float`, `str`, `bool`, `None`,
-    `list`, `dict`, `tuple`,
-    `pathlib.Path`
-- Some types (e.g. `numpy.ndarray`) cannot be cast.
-- [Tested in Python3.5, 3.6, 3.7, 3.8, 3.9, 3.10.](https://github.com/kihiyuki/python-rsdict/actions/workflows/python-package.yml)
-
 ## Examples
 
 ### Create (Initialize)
@@ -289,7 +280,29 @@ rsdict({'key1': 10, 'key2': 20, 'key3': False},
 {'key1': 10, 'key2': 'abc', 'key3': False}
 ```
 
-## Speed
+## Note
+
+- Expected types of value:
+    `int`, `float`, `str`, `bool`, `None`,
+    `list`, `dict`, `tuple`,
+    `pathlib.Path`
+- Some types (e.g. `numpy.ndarray`) cannot be cast.
+- [Tested in Python3.5, 3.6, 3.7, 3.8, 3.9, 3.10.](https://github.com/kihiyuki/python-rsdict/actions/workflows/python-package.yml)
+- Only initial items are deepcopied.
+
+```python
+>>> d = dict(a=[1])
+>>> rd = rsdict(d)
+>>> rd["a"].append(2)
+>>> rd
+rsdict({'a': [1, 2]}, frozen=False, fixkey=True, fixtype=True, cast=False)
+>>> d
+{'a': [1, 2]}
+>>> rd.get_initial()
+{'a': [1]}
+```
+
+### Performance
 
 rsdict is slower than `dict`
 due to its additional checking.

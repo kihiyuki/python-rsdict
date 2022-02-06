@@ -1,4 +1,5 @@
 import sys
+import copy
 from collections import namedtuple
 from typing import Any, Optional
 
@@ -139,7 +140,9 @@ class rsdict(dict):
             fixtype=bool(fixtype),
             cast=bool(cast),
         )
-        self.__inititems = _LimitedDict(items)
+        if type(items) is type(self):
+            items = items.to_dict()
+        self.__inititems = _LimitedDict(copy.deepcopy(items))
 
         self.__initialized = True
         return super().__init__(items)
@@ -147,7 +150,7 @@ class rsdict(dict):
     @check_option("fixkey")
     def __addkey(self, key: _KT, value: _VT) -> None:
         # add initialized key
-        self.__inititems[key] = value
+        self.__inititems[key] = copy.deepcopy(value)
         # add current key
         return super().__setitem__(key, value)
 
