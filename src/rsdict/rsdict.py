@@ -11,14 +11,7 @@ _VT = Any
 
 
 def raise_noattrib(*args, **kwargs):
-    raise AttributeError("No such attribute.")
-
-
-class ErrorMessages(
-    namedtuple(
-        "ErrorMessages",
-        ["frozen", "fixkey", "fixtype", "cast", "noattrib", "noarg"])):
-    _make = _replace = raise_noattrib
+    raise AttributeError("No such attribute")
 
 
 class Options(
@@ -28,13 +21,18 @@ class Options(
     _make = _replace = raise_noattrib
 
 
+class ErrorMessages(
+    namedtuple(
+        "ErrorMessages",
+        Options._fields)):
+    _make = _replace = raise_noattrib
+
+
 _ERRORMESSAGES = ErrorMessages(
     frozen="Cannot assign to field of frozen instance",
     fixkey="If fixkey, cannot add or delete keys",
     fixtype="",
     cast="",
-    noattrib="'rsdict' object has no attribute",
-    noarg="'rsdict' has no argument named",
 )
 
 
@@ -43,6 +41,9 @@ def check_option(name: str):
 
     Args:
         name (str): Fieldname of `Options` class.
+
+    Raises:
+        AttributeError: If the option parameter is True.
     """
     def _check_option(func):
         def wrapper(self, *args, **kwargs):
@@ -223,12 +224,7 @@ class rsdict(dict):
             if name in dir(self) and not name.startswith("_rsdict__"):
                 pass
             else:
-                raise AttributeError(
-                    "{} '{}'".format(
-                        _ERRORMESSAGES.noattrib,
-                        name,
-                    )
-                )
+                raise AttributeError("Cannot set attribute '{}'".format(name))
         return super().__setattr__(name, value)
 
     def __sizeof__(self) -> int:
@@ -244,7 +240,6 @@ class rsdict(dict):
         return size
 
     def __str__(self) -> str:
-        """Return str(dict(current values))."""
         return str(self.to_dict())
 
     def __repr__(self) -> str:
@@ -262,7 +257,6 @@ class rsdict(dict):
 
         @check_option("frozen")
         def __ior__(self, other) -> dict:
-            """Returns: rsdict"""
             if set(self.keys()) == set(self.keys() | other.keys()):
                 return super().__ior__(other)
             elif self.fixkey:
@@ -283,7 +277,7 @@ class rsdict(dict):
     # def get(self, key: _KT) -> _VT:
 
     def to_dict(self) -> dict:
-        """Convert to built-in dictionary (dict) instance.
+        """Convert to built-in dictionary instance.
 
         Returns:
             dict: Current values.
