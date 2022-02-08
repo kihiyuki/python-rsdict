@@ -152,11 +152,15 @@ class rsdict(dict):
             cast=bool(cast),
         )
 
-        # store initial values in __inititems
         # NOTE: Cannot deepcopy restdict
         if type(items) is type(self):
             items = items.to_dict()
-        self.__inititems = _Inititems(items)
+
+        # store initial values in __inititems
+        if self.frozen:
+            self.__inititems = None
+        else:
+            self.__inititems = _Inititems(items)
 
         return super().__init__(items)
 
@@ -251,7 +255,7 @@ class rsdict(dict):
         # current values
         size = super().__sizeof__()
         # initial values
-        size += self.get_initial().__sizeof__()
+        size += self.__inititems.__sizeof__()
         size += self.frozen.__sizeof__()
         size += self.fixkey.__sizeof__()
         size += self.fixtype.__sizeof__()
@@ -438,10 +442,14 @@ class rsdict(dict):
             dict (if key is None): Initial values.
             Any (else): Initial value.
         """
-        if key is None:
-            return self.__inititems
+        if self.frozen:
+            ret = self
         else:
-            return self.__inititems[key]
+            ret = self.__inititems
+        if key is None:
+            return ret
+        else:
+            return ret[key]
 
     def is_changed(self, key: _KT = None) -> bool:
         """Return whether the value(s) are changed.
