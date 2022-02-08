@@ -22,7 +22,6 @@ except Exception:
 pkg_dir = Path(__file__).parents[1]
 sys.path.append(str(pkg_dir))
 from src.rsdict import __version__, rsdict, rsdict_fixtype
-print(rsdict.__module__, __version__)
 
 
 def measure(d, f, size, n) -> tuple:
@@ -64,6 +63,13 @@ def main(argv) -> None:
     size = args.size
     n_test = args.test
     savefig = SAVEFIG and not bool(args.notsave)
+
+    print(rsdict.__module__, __version__)
+    print("size={}, n_test={}, savefig={}".format(
+        size,
+        n_test,
+        savefig,
+    ))
 
     nums = [random.random() for _ in range(size)]
     d_init = dict()
