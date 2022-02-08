@@ -10,25 +10,44 @@ _VT = Any
 # _VT = Union[str, int, float, str, bool, None, list, dict, tuple, Path]
 
 
-def raise_noattrib(*args, **kwargs):
-    raise AttributeError("No such attribute")
+class _Raise(object):
+    @staticmethod
+    def attribute(*args, **kwargs) -> None:
+        raise AttributeError("No such attribute")
+
+    @staticmethod
+    def attribute_set(*args, **kwargs) -> None:
+        raise AttributeError("Cannot set attribute")
 
 
-class Options(
+class _Inititems(dict):
+    update = setdefault = pop = popitem = _Raise.attribute
+
+    def __init__(self, items: dict) -> None:
+        return super().__init__(copy.deepcopy(items))
+
+    def __setitem__(self, key: _KT, value: _VT) -> None:
+        if key in self:
+            # cannot change existing value
+            _Raise.attribute_set()
+        return super().__setitem__(key, copy.deepcopy(value))
+
+
+class _Options(
     namedtuple(
         "Options",
         ["frozen", "fixkey", "fixtype", "cast"])):
-    _make = _replace = raise_noattrib
+    _make = _replace = _Raise.attribute
 
 
-class ErrorMessages(
+class _ErrorMessages(
     namedtuple(
         "ErrorMessages",
-        Options._fields)):
-    _make = _replace = raise_noattrib
+        _Options._fields)):
+    _make = _replace = _Raise.attribute
 
 
-_ERRORMESSAGES = ErrorMessages(
+_ERRORMESSAGES = _ErrorMessages(
     frozen="Cannot assign to field of frozen instance",
     fixkey="If fixkey, cannot add or delete keys",
     fixtype="",
@@ -37,10 +56,10 @@ _ERRORMESSAGES = ErrorMessages(
 
 
 def check_option(name: str):
-    """Decorator for checking `Options`.
+    """Decorator for checking _Options.
 
     Args:
-        name (str): Fieldname of `Options` class.
+        name (str): Fieldname of _Options class.
 
     Raises:
         AttributeError: If the option parameter is True.
@@ -54,7 +73,7 @@ def check_option(name: str):
     return _check_option
 
 
-def check_instance(object, classinfo, classname: str = None) -> None:
+def _check_instance(object, classinfo, classname: str = None) -> None:
     """Check type of object by `isinstance`.
 
     Args:
@@ -119,14 +138,14 @@ class rsdict(dict):
                 frozen=False, fixkey=True, fixtype=False, cast=False)
         """
         # check argument types
-        check_instance(items, dict)
-        check_instance(frozen, int, classname="bool")
-        check_instance(fixkey, int, classname="bool")
-        check_instance(fixtype, int, classname="bool")
-        check_instance(cast, int, classname="bool")
+        _check_instance(items, dict)
+        _check_instance(frozen, int, classname="bool")
+        _check_instance(fixkey, int, classname="bool")
+        _check_instance(fixtype, int, classname="bool")
+        _check_instance(cast, int, classname="bool")
 
         # create Options object
-        self.__options = Options(
+        self.__options = _Options(
             frozen=bool(frozen),
             fixkey=bool(fixkey),
             fixtype=bool(fixtype),
@@ -137,7 +156,7 @@ class rsdict(dict):
         # NOTE: Cannot deepcopy restdict
         if type(items) is type(self):
             items = items.to_dict()
-        self.__inititems = copy.deepcopy(items)
+        self.__inititems = _Inititems(items)
 
         return super().__init__(items)
 
@@ -161,7 +180,7 @@ class rsdict(dict):
     def __addkey(self, key: _KT, value: _VT) -> None:
         """Add a new key to instance."""
         # add initial key
-        self.__inititems[key] = copy.deepcopy(value)
+        self.__inititems[key] = value
         # add current key
         return super().__setitem__(key, value)
 
@@ -224,7 +243,7 @@ class rsdict(dict):
             if name in dir(self) and not name.startswith("_rsdict__"):
                 pass
             else:
-                raise AttributeError("Cannot set attribute '{}'".format(name))
+                _Raise.attribute_set()
         return super().__setattr__(name, value)
 
     def __sizeof__(self) -> int:
@@ -322,8 +341,8 @@ class rsdict(dict):
         if cast is None:
             cast = self.cast
 
-        check_instance(reset, int, classname="bool")
-        check_instance(frozen, int, classname="bool")
+        _check_instance(reset, int, classname="bool")
+        _check_instance(frozen, int, classname="bool")
         if not reset and frozen:
             # initialize with current values
             items = self.to_dict().copy()

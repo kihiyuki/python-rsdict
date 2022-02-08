@@ -20,7 +20,7 @@ from src.rsdict import (
     rsdict_fixkey,
     rsdict_fixtype
 )
-from src.rsdict.rsdict import _ERRORMESSAGES, Options
+from src.rsdict.rsdict import _ERRORMESSAGES, _Options
 
 
 OptionNames = ["frozen", "fixkey", "fixtype", "cast"]
@@ -95,7 +95,7 @@ class TestErrorMessages(object):
 
 class TestOptions(object):
     def test_raise(self):
-        options = Options(**dict().fromkeys(OptionNames, True))
+        options = _Options(**dict().fromkeys(OptionNames, True))
         with pytest.raises(AttributeError):
             options._replace(**{OptionNames[0]: False})
         with pytest.raises(AttributeError):
@@ -499,8 +499,10 @@ class TestRsdict(object):
 
     def test_hack(self, inititems):
         data = rsdict(inititems)
+
+        # clear inititems
         data._rsdict__inititems.clear()
-        # broken inititems
+        # fail to get
         with pytest.raises(KeyError):
             data["int"] = 5
 
@@ -521,13 +523,15 @@ class TestRsdict(object):
 
         # overwrite inititems (direct)
         data = rsdict(inititems)
-        data._rsdict__inititems["str"] = "xyz"
-        data._rsdict__inititems.update(int=2)
+        del data._rsdict__inititems["str"]
+        data._rsdict__inititems["str"] = "xxx"
         data.reset()
-        assert data["str"] == "xyz"
-        assert data["int"] == 2
-        data._rsdict__inititems.update(hoge=3)
+        assert data["str"] == "xxx"
+
+        # add initial key direct
+        data._rsdict__inititems["hoge"] = 3
         assert data.get_initial("hoge") == 3
+        # fail to reset
         with pytest.raises(AttributeError):
             data.reset("hoge")
         with pytest.raises(UnboundLocalError):
@@ -536,14 +540,23 @@ class TestRsdict(object):
     def test_hack_raise(self, inititems):
         data = rsdict(inititems)
 
-        # items is not an option
-        # with pytest.raises(AttributeError):
-        #     data.items
         # invalid option name
         with pytest.raises(AttributeError):
             data.hoge
         with pytest.raises(AttributeError):
             data.hoge = 0
+
+        # cannot change existing value
+        with pytest.raises(AttributeError):
+            data._rsdict__inititems["str"] = "yyy"
+        with pytest.raises(AttributeError):
+            data._rsdict__inititems.update(int=2)
+        with pytest.raises(AttributeError):
+            data._rsdict__inititems.setdefault(hoge=2)
+        with pytest.raises(AttributeError):
+            data._rsdict__inititems.pop("str")
+        with pytest.raises(AttributeError):
+            data._rsdict__inititems.popitem()
 
         # restricted attribute
         with pytest.raises(AttributeError):
