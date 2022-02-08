@@ -111,6 +111,8 @@ rsdict({'name': 'John', 'enable': True, 'count': 0},
 False
 >>> isinstance(rd, dict)
 True
+>>> rd.frozen
+False
 ```
 
 ### Get
@@ -120,12 +122,13 @@ Same as `dict`.
 ```python
 >>> rd["count"] == d["count"]
 True
+>>> rd["xyz"]
+KeyError
+
 >>> rd.get("count") == d.get("count")
 True
 >>> rd.get("xyz")
 None
->>> rd["xyz"]
-KeyError
 ```
 
 ### Set

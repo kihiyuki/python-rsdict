@@ -1,7 +1,7 @@
 import sys
 import copy
 from collections import namedtuple
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 
 _KT = Any
@@ -10,20 +10,22 @@ _VT = Any
 # _VT = Union[str, int, float, str, bool, None, list, dict, tuple, Path]
 
 
-class ErrorMessages(
-    namedtuple(
-        "ErrorMessages",
-        ["frozen", "fixkey", "fixtype", "cast", "noattrib", "noarg"])):
-    """Frozen namedtuple."""
-    _make = _replace = None
+def raise_noattrib(*args, **kwargs):
+    raise AttributeError("No such attribute")
 
 
 class Options(
     namedtuple(
         "Options",
         ["frozen", "fixkey", "fixtype", "cast"])):
-    """Frozen namedtuple."""
-    _make = _replace = None
+    _make = _replace = raise_noattrib
+
+
+class ErrorMessages(
+    namedtuple(
+        "ErrorMessages",
+        Options._fields)):
+    _make = _replace = raise_noattrib
 
 
 _ERRORMESSAGES = ErrorMessages(
@@ -31,8 +33,6 @@ _ERRORMESSAGES = ErrorMessages(
     fixkey="If fixkey, cannot add or delete keys",
     fixtype="",
     cast="",
-    noattrib="'rsdict' object has no attribute",
-    noarg="'rsdict' has no argument named",
 )
 
 
@@ -41,10 +41,13 @@ def check_option(name: str):
 
     Args:
         name (str): Fieldname of `Options` class.
+
+    Raises:
+        AttributeError: If the option parameter is True.
     """
     def _check_option(func):
         def wrapper(self, *args, **kwargs):
-            if self._get_option(name):
+            if self.__getattribute__(name):
                 raise AttributeError(_ERRORMESSAGES.__getattribute__(name))
             return func(self, *args, **kwargs)
         return wrapper
@@ -100,7 +103,7 @@ class rsdict(dict):
     """
     def __init__(
         self,
-        items: dict,
+        items: Union[dict, "rsdict"],
         frozen: bool = False,
         fixkey: bool = True,
         fixtype: bool = True,
@@ -157,6 +160,22 @@ class rsdict(dict):
 
         return super().__init__(items)
 
+    @property
+    def frozen(self) -> bool:
+        return self.__options.frozen
+
+    @property
+    def fixkey(self) -> bool:
+        return self.__options.fixkey
+
+    @property
+    def fixtype(self) -> bool:
+        return self.__options.fixtype
+
+    @property
+    def cast(self) -> bool:
+        return self.__options.cast
+
     @check_option("fixkey")
     def __addkey(self, key: _KT, value: _VT) -> None:
         """Add a new key to instance."""
@@ -189,8 +208,8 @@ class rsdict(dict):
             if type(value) is initialtype:
                 # type(value) is same as type(initial value)
                 pass
-            elif self._get_option("fixtype"):
-                if self._get_option("cast"):
+            elif self.fixtype:
+                if self.cast:
                     # raise if failed
                     value = initialtype(value)
                 else:
@@ -212,6 +231,7 @@ class rsdict(dict):
         return self.__delkey(key)
 
     # def __getattribute__(self, name: str) -> Any:
+    #     print("__getattribute__", name)
     #     return super().__getattribute__(name)
 
     def __setattr__(self, name: str, value: Any) -> None:
@@ -223,12 +243,7 @@ class rsdict(dict):
             if name in dir(self) and not name.startswith("_rsdict__"):
                 pass
             else:
-                raise AttributeError(
-                    "{} '{}'".format(
-                        _ERRORMESSAGES.noattrib,
-                        name,
-                    )
-                )
+                raise AttributeError("Cannot set attribute '{}'".format(name))
         return super().__setattr__(name, value)
 
     def __sizeof__(self) -> int:
@@ -237,23 +252,22 @@ class rsdict(dict):
         size = super().__sizeof__()
         # initial values
         size += self.get_initial().__sizeof__()
-        size += self._get_option("frozen").__sizeof__()
-        size += self._get_option("fixkey").__sizeof__()
-        size += self._get_option("fixtype").__sizeof__()
-        size += self._get_option("cast").__sizeof__()
+        size += self.frozen.__sizeof__()
+        size += self.fixkey.__sizeof__()
+        size += self.fixtype.__sizeof__()
+        size += self.cast.__sizeof__()
         return size
 
     def __str__(self) -> str:
-        """Return str(dict(current values))."""
         return str(self.to_dict())
 
     def __repr__(self) -> str:
         return "rsdict({}, frozen={}, fixkey={}, fixtype={}, cast={})".format(
             super().__repr__(),
-            self._get_option("frozen"),
-            self._get_option("fixkey"),
-            self._get_option("fixtype"),
-            self._get_option("cast"),
+            self.frozen,
+            self.fixkey,
+            self.fixtype,
+            self.cast,
         )
 
     if sys.version_info >= (3, 9):
@@ -262,10 +276,9 @@ class rsdict(dict):
 
         @check_option("frozen")
         def __ior__(self, other) -> dict:
-            """Returns: rsdict"""
             if set(self.keys()) == set(self.keys() | other.keys()):
                 return super().__ior__(other)
-            elif self._get_option("fixkey"):
+            elif self.fixkey:
                 raise AttributeError(_ERRORMESSAGES.fixkey)
             else:
                 newkeys = (other.keys() | self.keys()) - self.keys()
@@ -283,7 +296,7 @@ class rsdict(dict):
     # def get(self, key: _KT) -> _VT:
 
     def to_dict(self) -> dict:
-        """Convert to built-in dictionary (dict) instance.
+        """Convert to built-in dictionary instance.
 
         Returns:
             dict: Current values.
@@ -320,13 +333,13 @@ class rsdict(dict):
             current values are copied as initial values and frozen.
         """
         if frozen is None:
-            frozen = self._get_option("frozen")
+            frozen = self.frozen
         if fixkey is None:
-            fixkey = self._get_option("fixkey")
+            fixkey = self.fixkey
         if fixtype is None:
-            fixtype = self._get_option("fixtype")
+            fixtype = self.fixtype
         if cast is None:
-            cast = self._get_option("cast")
+            cast = self.cast
 
         check_instance(reset, int, classname="bool")
         check_instance(frozen, int, classname="bool")
@@ -429,9 +442,6 @@ class rsdict(dict):
             return self.__inititems
         else:
             return self.__inititems[key]
-
-    def _get_option(self, name: str) -> bool:
-        return self.__options.__getattribute__(name)
 
     def is_changed(self, key: _KT = None) -> bool:
         """Return whether the value(s) are changed.

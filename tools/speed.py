@@ -16,7 +16,7 @@ try:
     import matplotlib.pyplot as plt
     import seaborn as sns
     SAVEFIG = True
-except:
+except Exception:
     SAVEFIG = False
 
 pkg_dir = Path(__file__).parents[1]
@@ -91,18 +91,18 @@ def main(argv) -> None:
             if dname == "dict":
                 t_d = copy.copy(t)
             results.append(dict(
-                func = f,
-                data = dname,
-                time = t / size,
-                ratio = t / t_d
+                func=f,
+                data=dname,
+                time=t / size,
+                ratio=t / t_d
             ))
 
     df = pd.DataFrame.from_dict(results)
-    print(df[df["data"]=="rsdict"].set_index("func")["ratio"].to_dict())
+    print(df[df["data"] == "rsdict"].set_index("func")["ratio"].to_dict())
 
     if savefig:
         # figure
-        fig = plt.figure(figsize=(5,2))
+        fig = plt.figure(figsize=(5, 2))
         fig.patch.set_facecolor("white")
 
         # axis
@@ -122,7 +122,7 @@ def main(argv) -> None:
                 rect.get_width() * 2,
                 rect.get_y() + rect.get_height() * 1.6,
                 "x " + df[
-                    (df["func"]==f) * (df["data"]=="rsdict")
+                    (df["func"] == f) * (df["data"] == "rsdict")
                 ]["ratio"].round(1).astype(str).values[0],
                 horizontalalignment="left",
             )
