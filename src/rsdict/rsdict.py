@@ -55,7 +55,7 @@ _ERRORMESSAGES = _ErrorMessages(
 )
 
 
-def check_option(name: str):
+def _check_option(name: str):
     """Decorator for checking _Options.
 
     Args:
@@ -64,13 +64,13 @@ def check_option(name: str):
     Raises:
         AttributeError: If the option parameter is True.
     """
-    def _check_option(func):
+    def decorator(func):
         def wrapper(self, *args, **kwargs):
             if self.__getattribute__(name):
                 raise AttributeError(_ERRORMESSAGES.__getattribute__(name))
             return func(self, *args, **kwargs)
         return wrapper
-    return _check_option
+    return decorator
 
 
 def _check_instance(object, classinfo, classname: str = None) -> None:
@@ -101,6 +101,7 @@ class rsdict(dict):
         >>> from rsdict import rsdict
         >>> rd = rsdict(dict(foo=1, bar="baz"))
     """
+
     def __init__(
         self,
         items: Union[dict, "rsdict"],
@@ -176,7 +177,7 @@ class rsdict(dict):
     def cast(self) -> bool:
         return self.__options.cast
 
-    @check_option("fixkey")
+    @_check_option("fixkey")
     def __addkey(self, key: _KT, value: _VT) -> None:
         """Add a new key to instance."""
         # add initial key
@@ -184,7 +185,7 @@ class rsdict(dict):
         # add current key
         return super().__setitem__(key, value)
 
-    @check_option("fixkey")
+    @_check_option("fixkey")
     def __delkey(self, key: _KT) -> None:
         """Delete a key from instance."""
         # delete initial key
@@ -192,7 +193,7 @@ class rsdict(dict):
         # delete current key
         return super().__delitem__(key)
 
-    @check_option("frozen")
+    @_check_option("frozen")
     def __setitem__(self, key: _KT, value: _VT) -> None:
         """Set value with key.
 
@@ -225,7 +226,7 @@ class rsdict(dict):
             # add a new key
             return self.__addkey(key, value)
 
-    @check_option("frozen")
+    @_check_option("frozen")
     def __delitem__(self, key: _KT) -> None:
         """Cannot delete if fixkey or frozen."""
         return self.__delkey(key)
@@ -274,7 +275,7 @@ class rsdict(dict):
         # def __or__(self, other) -> dict:
         #     return super().__or__(other)
 
-        @check_option("frozen")
+        @_check_option("frozen")
         def __ior__(self, other) -> dict:
             if set(self.keys()) == set(self.keys() | other.keys()):
                 return super().__ior__(other)
@@ -375,8 +376,8 @@ class rsdict(dict):
         for key, value in updates.items():
             self[key] = value
 
-    @check_option("frozen")
-    @check_option("fixkey")
+    @_check_option("frozen")
+    @_check_option("fixkey")
     def clear(self) -> None:
         # clear initial key
         self.__inititems.clear()
@@ -390,13 +391,13 @@ class rsdict(dict):
             self[key] = value
             return value
 
-    @check_option("frozen")
-    @check_option("fixkey")
+    @_check_option("frozen")
+    @_check_option("fixkey")
     def pop(self, key: _KT) -> _VT:
         return super().pop(key)
 
-    @check_option("frozen")
-    @check_option("fixkey")
+    @_check_option("frozen")
+    @_check_option("fixkey")
     def popitem(self) -> tuple:
         return super().popitem()
 
