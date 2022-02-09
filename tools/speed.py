@@ -74,7 +74,7 @@ def main(argv) -> None:
     nums = [random.random() for _ in range(size)]
     d_init = dict()
     for i in range(size):
-        d_init[str(i)] = nums[i]
+        d_init["A" + str(i)] = nums[i]
 
     results = list()
     funcs = ["get", "set", "addkey", "delkey"]

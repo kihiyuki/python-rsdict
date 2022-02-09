@@ -20,17 +20,29 @@ class _Raise(object):
         raise AttributeError("Cannot set attribute")
 
 
-class _Inititems(dict):
-    update = setdefault = pop = popitem = _Raise.attribute
-
+class _Inititems(object):
     def __init__(self, items: dict) -> None:
-        return super().__init__(copy.deepcopy(items))
+        self.__keys = set(items)
+        self.__data = namedtuple("Inititems", self.__keys)(**items)
 
     def __setitem__(self, key: _KT, value: _VT) -> None:
-        if key in self:
+        if key in self.__keys:
             # cannot change existing value
             _Raise.attribute_set()
-        return super().__setitem__(key, copy.deepcopy(value))
+        else:
+            items = self.__data._asdict()
+            items[key] = value
+            self.__keys.add(key)
+            self.__data = namedtuple("Inititems", self.__keys)(**items)
+
+    def __getitem__(self, key: _KT) -> _VT:
+        if key in self.__keys:
+            return self.__data.__getattribute__(key)
+        else:
+            raise KeyError(key)
+
+    def __delitem__(self, key: _KT) -> _VT:
+        self.__keys.remove(key)
 
 
 class _Options(
