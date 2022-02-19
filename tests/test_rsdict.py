@@ -1,12 +1,13 @@
 """pytest
 
 Requirements:
-    pytest pytest-cov
+pip install -r requirements/test.txt
 Usage:
-    pytest -vsl --cov=./src/rsdict --cov-report=term-missing
+pytest -vsl --cov=./src/rsdict --cov-report=term-missing
 """
 import sys
 import math
+import copy
 from itertools import product
 from pathlib import Path, PosixPath, WindowsPath
 
@@ -19,7 +20,7 @@ from src.rsdict import (
     rsdict_fixkey,
     rsdict_fixtype
 )
-from src.rsdict.rsdict import _ErrorMessages, Options
+from src.rsdict.rsdict import _ERRORMESSAGES, _Options
 
 
 OptionNames = ["frozen", "fixkey", "fixtype", "cast"]
@@ -87,14 +88,14 @@ def compare(x, x_init):
 class TestErrorMessages(object):
     def test_raise(self):
         with pytest.raises(AttributeError):
-            _ErrorMessages._replace(noattrib="hoge")
+            _ERRORMESSAGES._replace(noattrib="hoge")
         with pytest.raises(AttributeError):
-            _ErrorMessages._make(["hoge"] * len(_ErrorMessages._fields))
+            _ERRORMESSAGES._make(["hoge"] * len(_ERRORMESSAGES._fields))
 
 
 class TestOptions(object):
     def test_raise(self):
-        options = Options(**dict().fromkeys(OptionNames, True))
+        options = _Options(**dict().fromkeys(OptionNames, True))
         with pytest.raises(AttributeError):
             options._replace(**{OptionNames[0]: False})
         with pytest.raises(AttributeError):
@@ -112,14 +113,14 @@ class TestRsdict(object):
     def test_init(self, kwargs, inititems):
         data = rsdict(inititems, **kwargs)
         assert data.to_dict() == inititems
-        for arg in kwargs.keys():
-            assert data._get_option(arg) == kwargs[arg]
+        for kw in kwargs.keys():
+            assert data.__getattribute__(kw) == kwargs[kw]
 
         data = rsdict(inititems)
         data2 = rsdict(data, **kwargs)
         assert data == data2
-        for arg in kwargs.keys():
-            assert data2._get_option(arg) == kwargs[arg]
+        for kw in kwargs.keys():
+            assert data2.__getattribute__(kw) == kwargs[kw]
 
         # unsupported dict-style initialization
         with pytest.raises(TypeError):
@@ -392,8 +393,8 @@ class TestRsdict(object):
         # change option
         data = defaultdata.copy(**kwargs)
         assert data == defaultdata
-        for arg in kwargs.keys():
-            assert data._get_option(arg) == kwargs[arg]
+        for kw in kwargs.keys():
+            assert data.__getattribute__(kw) == kwargs[kw]
 
     @pytest.mark.parametrize(*ParamKwargs, ids=ParamKwargNames)
     def test_copy_reset(self, kwargs, inititems):
@@ -498,38 +499,64 @@ class TestRsdict(object):
 
     def test_hack(self, inititems):
         data = rsdict(inititems)
+
+        # clear inititems
         data._rsdict__inititems.clear()
-        # broken inititems
+        # fail to get
         with pytest.raises(KeyError):
             data["int"] = 5
 
-        # overwrite inititems
+        # shallow copy (same as dict)
+        data = rsdict(inititems, frozen=True)
+        data["list"].append("hello")
+        assert data["list"] == inititems["list"]
+
+        # change frozen value
+        data = rsdict(copy.deepcopy(inititems), frozen=True)
+        data["list"].append("hello")
+        assert data["list"] != inititems["list"]
+
+        # overwrite inititems (compound objects)
         data = rsdict(inititems)
-        data._rsdict__inititems["str"] = "xyz"
-        data._rsdict__inititems.update(int=2)
+        data.get_initial("list").append("hello")
+        assert data.get_initial("list") != inititems["list"]
+
+        # overwrite inititems (direct)
+        data = rsdict(inititems)
+        del data._rsdict__inititems["str"]
+        data._rsdict__inititems["str"] = "xxx"
         data.reset()
-        assert data["str"] == "xyz"
-        assert data["int"] == 2
-        data._rsdict__inititems.update(hoge=3)
-        with pytest.raises(Exception):
-            data.reset()
-        # with pytest.raises(KeyError):
-        #     _ = data["hoge"]
+        assert data["str"] == "xxx"
+
+        # add initial key direct
+        data._rsdict__inititems["hoge"] = 3
         assert data.get_initial("hoge") == 3
+        # fail to reset
         with pytest.raises(AttributeError):
             data.reset("hoge")
+        with pytest.raises(UnboundLocalError):
+            data.reset()
 
     def test_hack_raise(self, inititems):
         data = rsdict(inititems)
 
-        # items is not an option
-        with pytest.raises(AttributeError):
-            data._get_option("items")
         # invalid option name
         with pytest.raises(AttributeError):
-            data._get_option("hoge")
+            data.hoge
         with pytest.raises(AttributeError):
             data.hoge = 0
+
+        # cannot change existing value
+        with pytest.raises(AttributeError):
+            data._rsdict__inititems["str"] = "yyy"
+        with pytest.raises(AttributeError):
+            data._rsdict__inititems.update(int=2)
+        with pytest.raises(AttributeError):
+            data._rsdict__inititems.setdefault(hoge=2)
+        with pytest.raises(AttributeError):
+            data._rsdict__inititems.pop("str")
+        with pytest.raises(AttributeError):
+            data._rsdict__inititems.popitem()
 
         # restricted attribute
         with pytest.raises(AttributeError):
@@ -551,8 +578,8 @@ class TestSubclass(object):
     def test_init(self, rsdict_sc, kwargs, inititems):
         data = rsdict_sc(inititems)
         assert data.to_dict() == inititems
-        for arg in kwargs.keys():
-            assert data._get_option(arg) == kwargs[arg]
+        for kw in kwargs.keys():
+            assert data.__getattribute__(kw) == kwargs[kw]
 
     @pytest.mark.parametrize(*ParamSubclass)
     def test_fromkeys(self, rsdict_sc, kwargs):
@@ -570,5 +597,5 @@ class TestSubclass(object):
             data["a"] = 1
             assert data["a"] == 1
             assert data.is_changed()
-        for arg in kwargs.keys():
-            assert data._get_option(arg) == kwargs[arg]
+        for kw in kwargs.keys():
+            assert data.__getattribute__(kw) == kwargs[kw]
